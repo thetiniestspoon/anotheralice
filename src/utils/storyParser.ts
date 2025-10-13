@@ -11,8 +11,15 @@ export function parseStory(storyText: string): Chapter[] {
   let currentChapter: Partial<Chapter> | null = null;
   let contentLines: string[] = [];
   
-  for (let i = 0; i < lines.length; i++) {
+  // Find the separator line to skip table of contents
+  const separatorIndex = lines.findIndex(line => line.trim() === '________________');
+  const startIndex = separatorIndex >= 0 ? separatorIndex + 1 : 0;
+  
+  for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i].trim();
+    
+    // Skip empty lines at the start
+    if (!line) continue;
     
     // Check for chapter number pattern (e.g., "1: THE FIRST ENTRY")
     const chapterMatch = line.match(/^(\d+):\s*(.+)$/);
@@ -37,8 +44,8 @@ export function parseStory(storyText: string): Chapter[] {
     } else if (line === '⚪' && currentChapter) {
       // Symbol marker for chapter
       currentChapter.symbol = '⚪';
-    } else if (currentChapter && line && !line.startsWith('TABLE OF CONTENTS') && line !== '________________') {
-      // Add to chapter content
+    } else if (currentChapter) {
+      // Add to chapter content (all non-chapter-header lines)
       contentLines.push(line);
     }
   }
