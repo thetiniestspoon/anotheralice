@@ -23,12 +23,15 @@ export const ChapterReader = ({
   const [revealedText, setRevealedText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
   const [scrollPercentage, setScrollPercentage] = useState(0);
+  const [typingSpeed, setTypingSpeed] = useState(20);
   const containerRef = useRef<HTMLDivElement>(null);
+  const speedBoostTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Progressive text revelation with typing effect - preserving paragraph breaks
   useEffect(() => {
     setRevealedText('');
     setIsTyping(true);
+    setTypingSpeed(20);
     let currentIndex = 0;
     const fullText = chapter.content;
 
@@ -40,12 +43,12 @@ export const ChapterReader = ({
         setIsTyping(false);
         clearInterval(typeInterval);
       }
-    }, 20); // Character-by-character typing speed
+    }, typingSpeed);
 
     return () => clearInterval(typeInterval);
-  }, [chapter.number]);
+  }, [chapter.number, typingSpeed]);
 
-  // Scroll tracking for bloom system
+  // Scroll tracking for bloom system and speed boost
   useEffect(() => {
     const handleScroll = () => {
       if (containerRef.current) {
@@ -60,13 +63,34 @@ export const ChapterReader = ({
         if (percentage > 90 && bloomLevel < 10) {
           onBloomIncrease();
         }
+
+        // Speed boost when scrolling to bottom during typing
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        if (isAtBottom && isTyping) {
+          setTypingSpeed(5);
+          
+          // Clear existing timeout
+          if (speedBoostTimeoutRef.current) {
+            clearTimeout(speedBoostTimeoutRef.current);
+          }
+          
+          // Reset speed after 2 seconds of no scroll activity
+          speedBoostTimeoutRef.current = setTimeout(() => {
+            setTypingSpeed(20);
+          }, 2000);
+        }
       }
     };
 
     const container = containerRef.current;
     container?.addEventListener('scroll', handleScroll);
-    return () => container?.removeEventListener('scroll', handleScroll);
-  }, [bloomLevel, onBloomIncrease]);
+    return () => {
+      container?.removeEventListener('scroll', handleScroll);
+      if (speedBoostTimeoutRef.current) {
+        clearTimeout(speedBoostTimeoutRef.current);
+      }
+    };
+  }, [bloomLevel, onBloomIncrease, isTyping]);
 
   // Calculate bloom-based color saturation
   const bloomSaturation = 20 + bloomLevel * 6;
