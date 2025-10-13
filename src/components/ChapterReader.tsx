@@ -24,23 +24,23 @@ export const ChapterReader = ({
   const [isTyping, setIsTyping] = useState(true);
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const words = chapter.content.split(' ');
 
-  // Progressive text revelation with typing effect
+  // Progressive text revelation with typing effect - preserving paragraph breaks
   useEffect(() => {
     setRevealedText('');
     setIsTyping(true);
     let currentIndex = 0;
+    const fullText = chapter.content;
 
     const typeInterval = setInterval(() => {
-      if (currentIndex < words.length) {
-        setRevealedText((prev) => (prev ? prev + ' ' : '') + words[currentIndex]);
+      if (currentIndex < fullText.length) {
+        setRevealedText(fullText.substring(0, currentIndex + 1));
         currentIndex++;
       } else {
         setIsTyping(false);
         clearInterval(typeInterval);
       }
-    }, 80); // Typing speed
+    }, 20); // Character-by-character typing speed
 
     return () => clearInterval(typeInterval);
   }, [chapter.number]);
@@ -170,8 +170,8 @@ export const ChapterReader = ({
             </div>
           )}
 
-          {/* Story text with typing effect */}
-          <div className="story-text text-foreground/90 leading-loose">
+          {/* Story text with typing effect - preserving paragraph breaks */}
+          <div className="story-text text-foreground/90 leading-loose whitespace-pre-wrap">
             {revealedText}
             {isTyping && (
               <span
