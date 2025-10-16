@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { AlicePrompt } from '@/components/AlicePrompt';
 import { GeneratedImage } from '@/hooks/useImageGeneration';
-import { alicePromptPoints } from '@/utils/alicePromptPoints';
+import { alicePromptPoints, AlicePromptPoint } from '@/utils/alicePromptPoints';
 
 interface ChapterReaderProps {
   chapter: Chapter;
@@ -32,16 +32,17 @@ export const ChapterReader = ({
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [revealProgress, setRevealProgress] = useState(0.15);
   const [showAlicePrompt, setShowAlicePrompt] = useState(false);
-  const [promptContext, setPromptContext] = useState('');
-  const [pauseReveal, setPauseReveal] = useState(false);
+  const [activePromptPoint, setActivePromptPoint] = useState<AlicePromptPoint | null>(null);
+  const [usedPointIds, setUsedPointIds] = useState<Set<string>>(new Set());
+  const [embeddedImages, setEmbeddedImages] = useState<Map<string, string>>(new Map());
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollPos = useRef(0);
   const accumulatedScroll = useRef(0);
-  const hasShownPrompt = useRef(false);
 
-  // Get the prompt point for this chapter
-  const promptPoint = useMemo(
-    () => alicePromptPoints.find(p => p.chapterNumber === chapter.number),
+  // Get all prompt points for this chapter
+  const promptPoints = useMemo(
+    () => alicePromptPoints.filter(p => p.chapterNumber === chapter.number),
     [chapter.number]
   );
 
@@ -59,9 +60,11 @@ export const ChapterReader = ({
     setRevealProgress(0.15);
     accumulatedScroll.current = 0;
     lastScrollPos.current = 0;
-    hasShownPrompt.current = false;
-    setPauseReveal(false);
+    setUsedPointIds(new Set());
+    setEmbeddedImages(new Map());
     setShowAlicePrompt(false);
+    setActivePromptPoint(null);
+    setPendingImageUrl(null);
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
@@ -84,17 +87,14 @@ export const ChapterReader = ({
       lastScrollPos.current = scrollTop;
       accumulatedScroll.current += scrollDelta;
 
-      // Reveal text based on accumulated scroll distance (unless paused for ALICE)
-      if (!pauseReveal) {
-        // Every 250px of scrolling reveals more text
-        const totalContentLength = chapter.content.length;
-        const revealRate = totalContentLength / 1000; // Adjust for desired reveal speed
-        const newProgress = Math.min(
-          0.15 + (accumulatedScroll.current * revealRate / totalContentLength) * 0.85,
-          1
-        );
-        setRevealProgress(newProgress);
-      }
+      // Reveal text based on accumulated scroll distance
+      const totalContentLength = chapter.content.length;
+      const revealRate = totalContentLength / 1000;
+      const newProgress = Math.min(
+        0.15 + (accumulatedScroll.current * revealRate / totalContentLength) * 0.85,
+        1
+      );
+      setRevealProgress(newProgress);
 
       // Increase bloom at scroll milestones
       if (percentage > 50 && bloomLevel < 5) {
@@ -103,14 +103,6 @@ export const ChapterReader = ({
       if (percentage > 90 && bloomLevel < 10) {
         onBloomIncrease();
       }
-
-      // Show ALICE prompt at defined trigger point (once per chapter)
-      if (promptPoint && percentage >= promptPoint.triggerPosition * 100 && !hasShownPrompt.current) {
-        hasShownPrompt.current = true;
-        setPauseReveal(true); // Pause text revelation
-        setPromptContext(promptPoint.textPassage);
-        setShowAlicePrompt(true);
-      }
     };
 
     const container = containerRef.current;
@@ -118,28 +110,109 @@ export const ChapterReader = ({
     return () => {
       container?.removeEventListener('scroll', handleScroll);
     };
-  }, [bloomLevel, onBloomIncrease, chapter.content, chapter.number]);
+  }, [bloomLevel, onBloomIncrease, chapter.content.length]);
 
   // Calculate bloom-based color saturation
   const bloomSaturation = 20 + bloomLevel * 6;
 
   // Calculate revealed text based on scroll progress
   const revealedCharCount = Math.floor(chapter.content.length * revealProgress);
-  const revealedText = chapter.content.substring(0, revealedCharCount);
 
+  // Handle clicking a glowing dot
+  const handleDotClick = (point: AlicePromptPoint) => {
+    setActivePromptPoint(point);
+    setShowAlicePrompt(true);
+  };
+
+  // Handle image generation completion
   const handleAliceAccept = (imageUrl: string) => {
-    onImageGenerated({
-      imageUrl,
-      chapterNumber: chapter.number,
-      timestamp: new Date().toISOString(),
-      textContext: promptContext,
-    });
+    setPendingImageUrl(imageUrl);
     setShowAlicePrompt(false);
+    // Image is now pending - waiting for user to click it
   };
 
   const handleAliceDismiss = () => {
     setShowAlicePrompt(false);
-    setPauseReveal(false); // Resume text revelation
+    setActivePromptPoint(null);
+  };
+
+  // Handle clicking the pending image to embed it
+  const handlePendingImageClick = () => {
+    if (pendingImageUrl && activePromptPoint) {
+      // Add to gallery
+      onImageGenerated({
+        imageUrl: pendingImageUrl,
+        chapterNumber: chapter.number,
+        timestamp: new Date().toISOString(),
+        textContext: activePromptPoint.textPassage,
+      });
+      
+      // Embed the image
+      setEmbeddedImages(prev => new Map(prev).set(activePromptPoint.id, pendingImageUrl));
+      setUsedPointIds(prev => new Set(prev).add(activePromptPoint.id));
+      
+      // Clear pending state
+      setPendingImageUrl(null);
+      setActivePromptPoint(null);
+    }
+  };
+
+  // Parse content with embedded images and dots
+  const renderContent = () => {
+    let currentPos = 0;
+    const elements: JSX.Element[] = [];
+    
+    // Sort prompt points by character position
+    const sortedPoints = [...promptPoints].sort((a, b) => a.characterPosition - b.characterPosition);
+    
+    sortedPoints.forEach((point, index) => {
+      const pointPos = Math.min(point.characterPosition, revealedCharCount);
+      
+      // Add text before this point
+      if (pointPos > currentPos) {
+        const textSegment = chapter.content.substring(currentPos, pointPos);
+        elements.push(
+          <span key={`text-${index}`}>{textSegment}</span>
+        );
+      }
+      
+      // Check if this point has an embedded image
+      const embeddedImage = embeddedImages.get(point.id);
+      if (embeddedImage) {
+        elements.push(
+          <img
+            key={`img-${point.id}`}
+            src={embeddedImage}
+            alt={point.description}
+            className="inline-block float-right ml-4 mb-4 w-64 h-64 object-cover rounded-lg border-2 border-primary/30 shadow-lg"
+          />
+        );
+      } else if (!usedPointIds.has(point.id) && pointPos <= revealedCharCount) {
+        // Show glowing dot if not used and text is revealed
+        elements.push(
+          <button
+            key={`dot-${point.id}`}
+            onClick={() => handleDotClick(point)}
+            className="inline-block mx-1 w-2 h-2 rounded-full bg-primary/60 animate-pulse hover:scale-150 transition-transform cursor-pointer"
+            style={{
+              boxShadow: `0 0 10px hsl(190 ${bloomSaturation}% 45% / 0.6)`,
+            }}
+            aria-label={`Visualize: ${point.description}`}
+          />
+        );
+      }
+      
+      currentPos = pointPos;
+    });
+    
+    // Add remaining text
+    if (currentPos < revealedCharCount) {
+      elements.push(
+        <span key="text-final">{chapter.content.substring(currentPos, revealedCharCount)}</span>
+      );
+    }
+    
+    return elements;
   };
 
   return (
@@ -243,38 +316,9 @@ export const ChapterReader = ({
             </div>
           )}
 
-          {/* Story text with parallax scroll reveal */}
-          <div className="story-text text-foreground/90 leading-loose space-y-4">
-            {parsedContent.map((line, index) => {
-              const lineStartPos = parsedContent
-                .slice(0, index)
-                .reduce((acc, l) => acc + l.text.length + 1, 0);
-              const lineEndPos = lineStartPos + line.text.length;
-              
-              // Calculate if this line should be visible
-              const isVisible = lineStartPos < revealedCharCount;
-              const visibleChars = Math.max(0, Math.min(
-                line.text.length,
-                revealedCharCount - lineStartPos
-              ));
-
-              if (!isVisible) return null;
-
-              const visibleText = line.text.substring(0, visibleChars);
-
-              return (
-                <div
-                  key={index}
-                  className={line.isSectionBreak ? 'text-center' : 'text-justify'}
-                  style={{
-                    opacity: visibleChars / line.text.length,
-                    transition: 'opacity 0.3s ease-out',
-                  }}
-                >
-                  {visibleText}
-                </div>
-              );
-            })}
+          {/* Story text with embedded images and glowing dots */}
+          <div className="story-text text-foreground/90 leading-loose text-justify">
+            {renderContent()}
           </div>
 
           {/* Bloom indicator */}
@@ -302,13 +346,36 @@ export const ChapterReader = ({
       </div>
 
       {/* ALICE prompt overlay */}
-      {showAlicePrompt && (
+      {showAlicePrompt && activePromptPoint && (
         <AlicePrompt
-          textContext={promptContext}
+          textContext={activePromptPoint.textPassage}
           chapterNumber={chapter.number}
           onAccept={handleAliceAccept}
           onDismiss={handleAliceDismiss}
         />
+      )}
+
+      {/* Pending generated image overlay */}
+      {pendingImageUrl && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md animate-fade-in cursor-pointer"
+          onClick={handlePendingImageClick}
+        >
+          <div className="relative max-w-4xl w-full mx-4">
+            <img
+              src={pendingImageUrl}
+              alt="Generated visualization"
+              className="w-full h-auto rounded-lg border-2 border-primary/30 shadow-2xl"
+            />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
+              <div className="bg-card/90 backdrop-blur-sm px-6 py-3 rounded-full border border-primary/20 shadow-lg">
+                <span className="system-text text-sm text-primary">
+                  TAP TO EMBED IN TEXT
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
