@@ -413,6 +413,7 @@ export const ChapterReader = ({
             isDisabled={!capturedText || capturedText.length < 10}
             onClick={handleAliceButtonClick}
             bloomSaturation={bloomSaturation}
+            position={captureBarPosition}
           />
         </div>
       </div>

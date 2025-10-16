@@ -3,6 +3,7 @@ interface AliceButtonProps {
   isDisabled: boolean;
   onClick: () => void;
   bloomSaturation: number;
+  position: number; // Vertical position in vh
 }
 
 export const AliceButton = ({
@@ -10,6 +11,7 @@ export const AliceButton = ({
   isDisabled,
   onClick,
   bloomSaturation,
+  position,
 }: AliceButtonProps) => {
   return (
     <button
@@ -17,8 +19,9 @@ export const AliceButton = ({
       disabled={isDisabled}
       className="fixed right-4 z-20 w-14 h-14 transition-all duration-300 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
       style={{
-        top: '50%',
+        top: `${position}vh`,
         transform: 'translateY(-50%)',
+        transition: 'top 200ms ease-out',
       }}
       aria-label="Open ALICE visualization"
       title={isDisabled ? "Scroll to capture text" : "Visualize this moment"}
