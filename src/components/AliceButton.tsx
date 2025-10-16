@@ -15,17 +15,10 @@ export const AliceButton = ({
     <button
       onClick={onClick}
       disabled={isDisabled}
-      className="fixed right-0 z-20 transition-all duration-300 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+      className="fixed right-4 z-20 w-14 h-14 transition-all duration-300 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
       style={{
         top: '50%',
         transform: 'translateY(-50%)',
-        width: '56px',
-        height: '60vh',
-        background: `linear-gradient(to left, 
-          transparent 0%, 
-          hsl(190 ${bloomSaturation}% 45% / 0.2) 100%)`,
-        borderLeft: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
-        borderRadius: '16px 0 0 16px',
       }}
       aria-label="Open ALICE visualization"
       title={isDisabled ? "Scroll to capture text" : "Visualize this moment"}

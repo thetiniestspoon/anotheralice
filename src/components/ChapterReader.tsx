@@ -32,8 +32,10 @@ export const ChapterReader = ({
   const [revealProgress, setRevealProgress] = useState(0.15);
   const [aliceOpen, setAliceOpen] = useState(false);
   const [capturedText, setCapturedText] = useState('');
-  const [captureBarHeight, setCaptureBarHeight] = useState(100);
+  const [captureBarPosition, setCaptureBarPosition] = useState(50); // Position in vh (50 = middle)
   const [scrollPosition, setScrollPosition] = useState(0);
+  
+  const CAPTURE_BAR_HEIGHT = 100; // Fixed height in pixels
   
   const containerRef = useRef<HTMLDivElement>(null);
   const readingContentRef = useRef<HTMLDivElement>(null);
@@ -63,8 +65,8 @@ export const ChapterReader = ({
   const getCapturedText = (): string => {
     if (!readingContentRef.current) return '';
 
-    const captureBarTop = window.innerHeight / 2 - captureBarHeight / 2;
-    const captureBarBottom = window.innerHeight / 2 + captureBarHeight / 2;
+    const captureBarTop = (window.innerHeight * captureBarPosition / 100) - CAPTURE_BAR_HEIGHT / 2;
+    const captureBarBottom = (window.innerHeight * captureBarPosition / 100) + CAPTURE_BAR_HEIGHT / 2;
 
     const textElements = readingContentRef.current.querySelectorAll('p');
     let capturedParts: string[] = [];
@@ -115,7 +117,7 @@ export const ChapterReader = ({
         clearTimeout(timer);
       };
     }
-  }, [captureBarHeight, revealedText]);
+  }, [captureBarPosition, revealedText]);
 
   // Parallax scroll-based text revelation
   useEffect(() => {
@@ -399,10 +401,10 @@ export const ChapterReader = ({
 
           {/* Text capture bar overlay */}
           <TextCaptureBar
-            height={captureBarHeight}
-            onHeightChange={setCaptureBarHeight}
-            previewText={capturedText}
+            position={captureBarPosition}
+            onPositionChange={setCaptureBarPosition}
             bloomSaturation={bloomSaturation}
+            height={CAPTURE_BAR_HEIGHT}
           />
 
           {/* ALICE button */}
