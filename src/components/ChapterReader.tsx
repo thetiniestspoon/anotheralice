@@ -165,15 +165,26 @@ export const ChapterReader = ({
     // Sort prompt points by character position
     const sortedPoints = [...promptPoints].sort((a, b) => a.characterPosition - b.characterPosition);
     
+    console.log('Chapter', chapter.number, 'render:', {
+      totalPoints: sortedPoints.length,
+      revealedChars: revealedCharCount,
+      chapterLength: chapter.content.length,
+      points: sortedPoints.map(p => ({
+        id: p.id,
+        pos: p.characterPosition,
+        visible: p.characterPosition <= revealedCharCount
+      }))
+    });
+    
     sortedPoints.forEach((point, index) => {
-      const pointPos = Math.min(point.characterPosition, revealedCharCount);
-      
       // Add text before this point
-      if (pointPos > currentPos) {
-        const textSegment = chapter.content.substring(currentPos, pointPos);
+      if (point.characterPosition > currentPos && revealedCharCount > currentPos) {
+        const endPos = Math.min(point.characterPosition, revealedCharCount);
+        const textSegment = chapter.content.substring(currentPos, endPos);
         elements.push(
           <span key={`text-${index}`}>{textSegment}</span>
         );
+        currentPos = endPos;
       }
       
       // Check if this point has an embedded image
@@ -187,8 +198,9 @@ export const ChapterReader = ({
             className="inline-block float-right ml-4 mb-4 w-64 h-64 object-cover rounded-lg border-2 border-primary/30 shadow-lg"
           />
         );
-      } else if (!usedPointIds.has(point.id) && pointPos <= revealedCharCount) {
-        // Show glowing dot if not used and text is revealed
+      } else if (!usedPointIds.has(point.id) && point.characterPosition <= revealedCharCount) {
+        // Show glowing dot if not used and text is revealed up to this point
+        console.log('Rendering dot for', point.id);
         elements.push(
           <button
             key={`dot-${point.id}`}
@@ -200,9 +212,8 @@ export const ChapterReader = ({
             aria-label={`Visualize: ${point.description}`}
           />
         );
+        currentPos = point.characterPosition;
       }
-      
-      currentPos = pointPos;
     });
     
     // Add remaining text
