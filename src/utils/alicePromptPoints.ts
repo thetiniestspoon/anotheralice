@@ -7,128 +7,128 @@ export interface AlicePromptPoint {
 }
 
 export const alicePromptPoints: AlicePromptPoint[] = [
-  // Chapter 1 - Multiple visual moments
+  // Chapter 1 - Multiple visual moments at sentence/paragraph breaks
   {
     chapterNumber: 1,
-    characterPosition: 850,
+    characterPosition: 1200,
     textPassage: "The appalling silence of deep space crescendoed recklessly to a roar, then a scream, then an awesome symphony of sound and static.",
-    description: "The overwhelming sensory experience entering the black hole",
+    description: "A visual explosion of sound waves transforming from silence into chaos - vibrating energy patterns, crescendoing waveforms bursting into color, sonic ripples through the void of space",
     id: "ch1-entry"
   },
   {
     chapterNumber: 1,
-    characterPosition: 3200,
-    textPassage: "Adam rubbed at his eyes in disbelief, as the dancing gray fog shifted, revealing a dramatic constellation of ships and debris. All around, Adam could make them out – smatterings of black ink held fast in the sky, jagged streaks and tears punctuated by circular droplets.",
-    description: "The constellation of destroyed ships",
+    characterPosition: 8900,
+    textPassage: "Adam rubbed at his eyes in disbelief, as the dancing gray fog shifted, revealing a dramatic constellation of ships and debris.",
+    description: "A haunting field of broken spacecraft suspended in thick gray fog - intact spherical pods floating among jagged torn metal sheets, dark silhouettes against swirling mist, debris creating an eerie constellation pattern",
     id: "ch1-constellation"
   },
-  // Chapter 2 - Greenhouse moments
+  // Chapter 2 - Greenhouse moments at natural breaks
   {
     chapterNumber: 2,
-    characterPosition: 1200,
-    textPassage: "The vegetation, so to speak, consisted of meager, naked, weary excuses for life. All around the room, the floor was covered with creation after creation, each flawed in some tragic way. Row after row of pots holding stems without leaves, or roots without stems, seeds that couldn't bloom, or dust waiting to claim another attempt at life.",
-    description: "Adam's greenhouse of failed experiments",
+    characterPosition: 2400,
+    textPassage: "The vegetation consisted of meager, naked, weary excuses for life.",
+    description: "A dimly lit greenhouse filled with wilting plants in terracotta pots - withered stems without leaves, exposed roots tangled in dry soil, failed seedlings turning to dust, rows of dying attempts at cultivation",
     id: "ch2-greenhouse"
   },
   {
     chapterNumber: 2,
-    characterPosition: 2800,
-    textPassage: "A single flower bloomed defiantly among the failures - a daffodil with golden petals that seemed to glow with its own light in the dim greenhouse.",
-    description: "The one successful daffodil",
+    characterPosition: 4800,
+    textPassage: "A single daffodil bloomed defiantly among the failures.",
+    description: "One brilliant golden daffodil flower glowing softly in darkness - luminescent petals radiating warm light, surrounded by shadows and dead plant matter, a solitary beacon of successful life",
     id: "ch2-daffodil"
   },
-  // Chapter 3 - The storm
+  // Chapter 3 - The storm at paragraph breaks
   {
     chapterNumber: 3,
-    characterPosition: 1800,
-    textPassage: "Mountains rose from the once-flat sea, gargantuan mounds topped by epic monoliths that stretched endlessly upward into all-consuming light. Adam felt impossibly small, trapped in a valley between these monuments.",
-    description: "The star storm and mountains of dust",
+    characterPosition: 3600,
+    textPassage: "Mountains rose from the once-flat sea, gargantuan mounds topped by epic monoliths.",
+    description: "Towering mountains of cosmic dust rising from a gray sea - massive angular formations reaching upward, illuminated by intense light from above, deep valleys between monuments creating dramatic shadows",
     id: "ch3-mountains"
   },
-  // Chapter 4 - The egg
+  // Chapter 4 - The egg at sentence breaks
   {
     chapterNumber: 4,
-    characterPosition: 2100,
-    textPassage: "There in the chamber below waited an egg, partially submerged in a pool of ochre soup, bobbing gently in the murky broth. A hairline crack had developed in the soft shell, a thin fracture that ran nearly all the way around the circumference of the thing.",
-    description: "The egg beginning to hatch",
+    characterPosition: 4200,
+    textPassage: "There waited an egg, partially submerged in a pool of ochre soup.",
+    description: "A pale organic egg floating in thick amber liquid - smooth shell surface with a hairline crack spiraling around its circumference, murky golden broth gently rippling, dim chamber lighting",
     id: "ch4-egg"
   },
   {
     chapterNumber: 4,
-    characterPosition: 3400,
-    textPassage: "The crack widened and a pale, translucent appendage emerged, testing the air with delicate movements.",
-    description: "Life emerging from the egg",
+    characterPosition: 6800,
+    textPassage: "The crack widened and a pale appendage emerged.",
+    description: "A translucent appendage pushing through cracked eggshell - delicate pale limb testing the air, fragments of shell falling into ochre liquid below, moment of emergence frozen in time",
     id: "ch4-hatching"
   },
-  // Chapter 5 - Destruction and resilience
+  // Chapter 5 - Destruction at paragraph breaks
   {
     chapterNumber: 5,
-    characterPosition: 1500,
-    textPassage: "All around, the faces of his beloved daffodils peeked out from behind shattered clay pieces or from under hills of dust that held them hard to the ground. Embedded in the chaos was the oak, inverted and odd, its branches buried deep into the haphazard horde like roots, and its roots protruding embarrassingly out into the open air.",
-    description: "The garden destroyed by the storm",
+    characterPosition: 3000,
+    textPassage: "The faces of daffodils peeked out from behind shattered clay pieces.",
+    description: "Yellow daffodil flowers buried under broken pottery shards and dust hills - golden petals struggling through debris, an upside-down oak tree with roots exposed to air and branches buried in chaos",
     id: "ch5-destruction"
   },
-  // Chapter 6 - The pearl
+  // Chapter 6 - The pearl at sentence end
   {
     chapterNumber: 6,
-    characterPosition: 2200,
-    textPassage: "The pearl gleamed in the low light of the room, held tenderly in Adam's trembling hands. It was opalescent, shifting colors as it caught what little illumination filtered down from above – blues and greens and purples dancing across its surface like oil on water.",
-    description: "Discovery of the pearl",
+    characterPosition: 4400,
+    textPassage: "The pearl gleamed in the low light, shifting colors as it caught illumination.",
+    description: "An iridescent pearl held in cupped hands - opalescent surface shifting between blue, green, and purple hues, catching rays of dim light, colors dancing across the smooth spherical surface like oil on water",
     id: "ch6-pearl"
   },
-  // Chapter 7 - Companionship
+  // Chapter 7 - Companionship at natural breaks
   {
     chapterNumber: 7,
-    characterPosition: 1800,
-    textPassage: "Evan moved through the garden with purpose, his hands running along the stems and leaves, checking each plant like a parent might check a sleeping child. His presence filled the space in ways Adam had forgotten were possible – the sound of another voice, another set of footsteps, another beating heart.",
-    description: "Evan tending the garden",
+    characterPosition: 3600,
+    textPassage: "Hands running along stems and leaves, checking each plant carefully.",
+    description: "Gentle hands tending to plant stems in a greenhouse - fingers carefully examining leaves and stems, checking for signs of health, tender care being given to growing vegetation in dim light",
     id: "ch7-evan"
   },
   {
     chapterNumber: 7,
-    characterPosition: 3100,
-    textPassage: "Their hands touched as they reached for the same stem, and for a moment the garden felt less like a graveyard and more like a promise.",
-    description: "Connection in the garden",
+    characterPosition: 6200,
+    textPassage: "Their hands touched as they reached for the same stem.",
+    description: "Two hands meeting on a single plant stem - fingers touching as they both reach for the same green shoot, moment of connection among the plants, gentle overlap of reaching gestures",
     id: "ch7-connection"
   },
-  // Chapter 8 - Fire and memory
+  // Chapter 8 - Fire at paragraph break
   {
     chapterNumber: 8,
-    characterPosition: 2000,
-    textPassage: "With a momentous crash and a sickening belch, a life crumbled to ash in the twilit breaths of a new day's dawn.",
-    description: "The burning house in Evan's story",
+    characterPosition: 4000,
+    textPassage: "With a momentous crash, a life crumbled to ash in twilit breaths of dawn.",
+    description: "A structure collapsing into flames at dawn - building silhouette disintegrating into ash and embers, twilight sky with first light breaking, debris falling through smoke and fire",
     id: "ch8-fire"
   },
-  // Chapter 9 - Drowning
+  // Chapter 9 - Drowning at sentence end
   {
     chapterNumber: 9,
-    characterPosition: 1600,
-    textPassage: "The water was everywhere and nowhere all at once. Adam floated in the viscous gray, suspended between drowning and breathing, between life and whatever came after.",
-    description: "Sinking into the dust sea",
+    characterPosition: 3200,
+    textPassage: "Floating in the viscous gray, suspended between drowning and breathing.",
+    description: "A figure suspended in thick gray liquid - weightless body floating in viscous fog-like fluid, neither sinking nor rising, caught in liminal space between substance and void",
     id: "ch9-drowning"
   },
-  // Chapter 10 - Together
+  // Chapter 10 - Together at paragraph break
   {
     chapterNumber: 10,
-    characterPosition: 2400,
-    textPassage: "They stood together at the edge of the pod, looking out at the horizon where dust met sky. Two figures in the vastness, no longer alone, but still searching for meaning in the gray.",
-    description: "Standing together at the threshold",
+    characterPosition: 4800,
+    textPassage: "They stood together at the edge, looking out at the horizon.",
+    description: "Two silhouettes standing at the edge of a platform - figures side by side looking toward a gray horizon where dust meets sky, vastness stretching before them, shared contemplation",
     id: "ch10-threshold"
   },
-  // Chapter 11 - The encounter
+  // Chapter 11 - The encounter at sentence break
   {
     chapterNumber: 11,
-    characterPosition: 1900,
-    textPassage: "The stranger's eyes held galaxies within them, reflecting the dancing stars above. When they spoke, it was with the weight of eons, of journeys beyond comprehension.",
-    description: "The mysterious encounter",
+    characterPosition: 3800,
+    textPassage: "Eyes held galaxies within them, reflecting the dancing stars above.",
+    description: "Close view of eyes filled with starlight - pupils containing swirling galaxies, stars reflected in the iris, cosmic patterns dancing within the gaze, deep space contained in human eyes",
     id: "ch11-stranger"
   },
-  // Chapter 12 - Transformation
+  // Chapter 12 - Transformation at paragraph break
   {
     chapterNumber: 12,
-    characterPosition: 2600,
-    textPassage: "The ship trembled with anticipation, systems coming online one by one. This was not an ending, but a transformation – a chrysalis splitting open to reveal something new.",
-    description: "Preparing to leave",
+    characterPosition: 5200,
+    textPassage: "The ship trembled with anticipation, systems coming online one by one.",
+    description: "A spherical spacecraft awakening - control panels lighting up in sequence, energy flowing through the ship's systems, gentle vibration of machinery coming to life, glow of activation spreading across surfaces",
     id: "ch12-transformation"
   }
 ];

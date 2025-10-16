@@ -124,11 +124,9 @@ export const ChapterReader = ({
     setShowAlicePrompt(true);
   };
 
-  // Handle image generation completion
   const handleAliceAccept = (imageUrl: string) => {
     setPendingImageUrl(imageUrl);
     setShowAlicePrompt(false);
-    // Image is now pending - waiting for user to click it
   };
 
   const handleAliceDismiss = () => {
@@ -348,7 +346,7 @@ export const ChapterReader = ({
           )}
 
           {/* Story text with embedded images and glowing dots */}
-          <div className="story-text text-foreground/90 leading-loose">
+          <div className="story-text text-foreground/90 leading-loose text-justify">
             {renderContent()}
           </div>
 

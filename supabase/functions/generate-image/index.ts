@@ -21,32 +21,40 @@ serve(async (req) => {
 
     // Rich narrative context for each chapter
     const chapterContexts: Record<number, string> = {
-      1: "The protagonist Adam enters a black hole in a spherical ship with AI companion ALICE. He finds a graveyard of destroyed ships suspended in gray fog. Themes: isolation, survival, cosmic horror, the unknown.",
-      2: "Adam explores his greenhouse of failed botanical experiments aboard the pod. He's a biologist trying to create life in dead environments. Themes: persistence, creation vs destruction, hope despite failure.",
-      3: "A massive star storm erupts, forming mountains of cosmic dust. Adam feels impossibly small in the vastness. Themes: overwhelming scale, beauty in chaos, insignificance and awe.",
-      4: "Discovery of an egg beginning to hatch in ochre liquid. First signs of nascent life emerging. Themes: birth, vulnerability, potential, anticipation of the new.",
-      5: "The garden is destroyed by the storm - daffodils buried, an oak tree inverted. Chaos and loss. Themes: devastation, resilience, nature's fragility and strength.",
-      6: "Adam finds an opalescent pearl shifting colors in the dim light. A treasure amid ruins. Themes: discovery, hidden beauty, value in unexpected places.",
-      7: "Evan appears and tends to the garden with care, his presence filling the void of loneliness. Themes: companionship, healing touch, shared purpose, end of isolation.",
-      8: "Evan tells a story of a house burning to ash at dawn. A past life ending in flames. Themes: destruction, memory, loss, transformation through fire.",
-      9: "Adam sinks into the viscous gray dust sea, suspended between life and death. Themes: surrender, liminal space, drowning in the unknown.",
-      10: "Adam and Evan stand together at the pod's edge, looking at the horizon. No longer alone but still searching. Themes: partnership, contemplation, shared journey.",
-      11: "A mysterious stranger with galaxy-filled eyes speaks with ancient weight. Themes: cosmic perspective, wisdom beyond comprehension, ethereal encounter.",
-      12: "The ship awakens, systems coming online. Preparing to leave - not an ending but transformation. Themes: metamorphosis, departure, hope, new beginnings."
+      1: "Inside a black hole: spherical spacecraft, gray fog environment, destroyed ship debris, cosmic horror atmosphere, isolation",
+      2: "Interior greenhouse chamber: withered plants, terracotta pots, failed botanical experiments, dim lighting, sparse vegetation",
+      3: "Cosmic dust storm: massive dust mountains, towering formations, overwhelming scale, intense light from above, valleys of shadow",
+      4: "Hatching chamber: organic egg in amber liquid, cracking shell, emerging life form, ochre colored broth, dim atmosphere",
+      5: "Destroyed garden: buried daffodils, broken pottery, inverted tree with exposed roots, storm damage, chaos and debris",
+      6: "Discovery moment: opalescent pearl, shifting iridescent colors, dim light, precious object, blue green purple hues",
+      7: "Garden tending: gentle hands on plant stems, careful plant care, greenhouse environment, growing vegetation, nurturing touch",
+      8: "Burning structure: building collapsing into flames, twilight dawn sky, ash and embers, destruction and fire",
+      9: "Suspended in void: figure floating in viscous gray substance, weightless, between drowning and floating, liminal space",
+      10: "Standing at edge: two silhouettes on platform edge, gray horizon, dust meeting sky, shared contemplation, vastness",
+      11: "Cosmic eyes: close view of eyes with galaxies inside, starlight reflected in pupils, swirling cosmic patterns, deep space in gaze",
+      12: "Ship awakening: spherical spacecraft with systems activating, control panels lighting up, energy flowing, gentle vibration, glow spreading"
     };
 
-    const narrativeContext = chapterContexts[chapterNumber] || "A scene from a sci-fi story about isolation and discovery in space.";
+    const narrativeContext = chapterContexts[chapterNumber] || "A scene from a space exploration story.";
 
-    // Create a rich, context-aware prompt
-    const imagePrompt = `Create a cinematic sci-fi illustration for "Another ALICE" - ${narrativeContext}
+    // Create a rich, tangible prompt - NO TEXT IN IMAGE
+    const imagePrompt = `CRITICAL: DO NOT INCLUDE ANY TEXT, LETTERS, WORDS, OR WRITING IN THIS IMAGE.
 
-Key scene from the text: ${textContext.substring(0, 400)}
+Create a highly tangible, physical sci-fi illustration: ${narrativeContext}
 
-Visual style: Moody space aesthetic with mysterious gray fog, cosmic dust particles, ethereal bioluminescent lighting, deep blacks contrasted with glowing cyan/teal accents, cinematic composition with dramatic depth of field.
+Visual reference from scene: ${textContext.substring(0, 300)}
 
-Atmosphere: Contemplative, haunting, beautiful yet unsettling. Capture the loneliness and wonder of deep space exploration, the tension between hope and despair, organic life struggling in mechanical environments.
+Style requirements:
+- Moody space aesthetic with gray fog and cosmic dust
+- Deep blacks contrasted with glowing cyan/teal/blue accents  
+- Bioluminescent organic elements where appropriate
+- Cinematic composition with atmospheric depth
+- Painterly texture and careful lighting
+- NO text, letters, symbols, or written language anywhere in the image
 
-Technical: Ultra high resolution, painterly details, atmospheric perspective with layers of fog, careful attention to light sources and their glow through the mist.`;
+Atmosphere: Contemplative, haunting, beautiful yet unsettling. Focus on tangible physical details - textures, materials, lighting, forms.
+
+Technical: Ultra high resolution, dramatic lighting with specific light sources, layered fog for depth, photorealistic material rendering.`;
 
     console.log('Sending request to Lovable AI for chapter', chapterNumber);
 
