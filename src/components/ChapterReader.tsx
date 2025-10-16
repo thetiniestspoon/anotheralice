@@ -25,7 +25,7 @@ export const ChapterReader = ({
   onImageGenerated,
 }: ChapterReaderProps) => {
   const [scrollPercentage, setScrollPercentage] = useState(0);
-  const [revealProgress, setRevealProgress] = useState(0);
+  const [revealProgress, setRevealProgress] = useState(0.15);
   const [showAlicePrompt, setShowAlicePrompt] = useState(false);
   const [promptContext, setPromptContext] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export const ChapterReader = ({
 
   // Reset on chapter change
   useEffect(() => {
-    setRevealProgress(0);
+    setRevealProgress(0.15);
     accumulatedScroll.current = 0;
     lastScrollPos.current = 0;
     hasShownPrompt.current = false;
@@ -72,11 +72,11 @@ export const ChapterReader = ({
       accumulatedScroll.current += scrollDelta;
 
       // Reveal text based on accumulated scroll distance
-      // Every 500px of scrolling reveals ~25% more text
+      // Every 250px of scrolling reveals more text
       const totalContentLength = chapter.content.length;
-      const revealRate = totalContentLength / 2000; // Adjust for desired reveal speed
+      const revealRate = totalContentLength / 1000; // Adjust for desired reveal speed
       const newProgress = Math.min(
-        accumulatedScroll.current * revealRate / totalContentLength,
+        0.15 + (accumulatedScroll.current * revealRate / totalContentLength) * 0.85,
         1
       );
       setRevealProgress(newProgress);
