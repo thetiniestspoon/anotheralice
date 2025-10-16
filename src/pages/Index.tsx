@@ -3,10 +3,12 @@ import { PodEntry } from '@/components/PodEntry';
 import { ChapterReader } from '@/components/ChapterReader';
 import { ChapterMenu } from '@/components/ChapterMenu';
 import { SystemDiagnostic } from '@/components/SystemDiagnostic';
+import { DomeViewer } from '@/components/DomeViewer';
 import { parseStory, Chapter } from '@/utils/storyParser';
+import { useImageGeneration } from '@/hooks/useImageGeneration';
 import storyData from '@/data/story.txt?raw';
 
-type ViewMode = 'entry' | 'menu' | 'diagnostic' | 'reading';
+type ViewMode = 'entry' | 'menu' | 'diagnostic' | 'reading' | 'gallery';
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('entry');
@@ -14,6 +16,7 @@ const Index = () => {
   const [currentChapter, setCurrentChapter] = useState(1);
   const [bloomLevel, setBloomLevel] = useState(0);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const { images, addImage } = useImageGeneration();
 
   // Parse story on mount
   useEffect(() => {
@@ -69,6 +72,14 @@ const Index = () => {
     setBloomLevel((prev) => Math.min(prev + 1, 10));
   };
 
+  const handleOpenGallery = () => {
+    setViewMode('gallery');
+  };
+
+  const handleCloseGallery = () => {
+    setViewMode('menu');
+  };
+
   const currentChapterData = chapters.find((ch) => ch.number === currentChapter);
 
   if (chapters.length === 0) {
@@ -91,6 +102,15 @@ const Index = () => {
           currentChapter={currentChapter}
           onSelectChapter={handleSelectChapter}
           bloomLevel={bloomLevel}
+          onOpenGallery={handleOpenGallery}
+          galleryImageCount={images.length}
+        />
+      )}
+      
+      {viewMode === 'gallery' && (
+        <DomeViewer
+          images={images}
+          onClose={handleCloseGallery}
         />
       )}
       
@@ -109,6 +129,7 @@ const Index = () => {
           canGoNext={currentChapter < chapters.length}
           bloomLevel={bloomLevel}
           onBloomIncrease={handleBloomIncrease}
+          onImageGenerated={addImage}
         />
       )}
     </>

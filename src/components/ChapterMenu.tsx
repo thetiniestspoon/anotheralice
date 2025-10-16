@@ -10,18 +10,44 @@ interface ChapterMenuProps {
   currentChapter: number;
   onSelectChapter: (chapterNumber: number) => void;
   bloomLevel: number;
+  onOpenGallery: () => void;
+  galleryImageCount: number;
 }
 
-const SphereSeparator = ({ bloomSaturation }: { bloomSaturation: number }) => (
-  <div className="flex items-center justify-center py-24">
-    <div
-      className="w-16 h-16 rounded-full animate-[spin_30s_linear_infinite]"
+// Decorative sphere separator for mobile infinite scroll - now clickable
+const SphereSeparator = ({ 
+  bloomSaturation,
+  onClick, 
+  imageCount 
+}: { 
+  bloomSaturation: number;
+  onClick: () => void; 
+  imageCount: number;
+}) => (
+  <div className="flex items-center justify-center py-32">
+    <button
+      onClick={onClick}
+      className="relative w-16 h-16 rounded-full border-2 border-primary/30 hover:border-primary/50 transition-all duration-500 hover:scale-110 group"
       style={{
         background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 60% / 0.4), hsl(190 ${bloomSaturation}% 35% / 0.8))`,
         boxShadow: `0 0 40px hsl(190 ${bloomSaturation}% 45% / 0.3), inset 0 0 20px hsl(190 ${bloomSaturation}% 60% / 0.2)`,
-        transform: 'rotateX(20deg) rotateY(20deg)',
+        animation: 'float-sphere 20s infinite ease-in-out',
       }}
-    />
+    >
+      {/* Image count indicator */}
+      {imageCount > 0 && (
+        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground system-text">
+          {imageCount}
+        </div>
+      )}
+      
+      {/* Hover hint */}
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+        <span className="system-text text-xs text-muted-foreground">
+          {imageCount > 0 ? 'VIEW GALLERY' : 'MEMORY ARCHIVE'}
+        </span>
+      </div>
+    </button>
   </div>
 );
 
@@ -30,6 +56,8 @@ export const ChapterMenu = ({
   currentChapter,
   onSelectChapter,
   bloomLevel,
+  onOpenGallery,
+  galleryImageCount,
 }: ChapterMenuProps) => {
   const bloomSaturation = 20 + bloomLevel * 6;
   const isMobile = useIsMobile();
@@ -158,7 +186,13 @@ export const ChapterMenu = ({
                       </Button>
                     );
                   })}
-                  {cycleIndex < 2 && <SphereSeparator bloomSaturation={bloomSaturation} />}
+                  {cycleIndex < 2 && (
+                    <SphereSeparator 
+                      bloomSaturation={bloomSaturation} 
+                      onClick={onOpenGallery}
+                      imageCount={galleryImageCount}
+                    />
+                  )}
                 </div>
               ))}
             </div>

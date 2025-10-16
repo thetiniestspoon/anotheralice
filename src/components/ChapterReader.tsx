@@ -1,7 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Chapter } from '@/utils/storyParser';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, List } from 'lucide-react';
+import { AlicePrompt } from '@/components/AlicePrompt';
+import { GeneratedImage } from '@/hooks/useImageGeneration';
 
 interface ChapterReaderProps {
   chapter: Chapter;
@@ -10,6 +12,7 @@ interface ChapterReaderProps {
   canGoNext: boolean;
   bloomLevel: number;
   onBloomIncrease: () => void;
+  onImageGenerated: (image: GeneratedImage) => void;
 }
 
 export const ChapterReader = ({
@@ -19,66 +22,80 @@ export const ChapterReader = ({
   canGoNext,
   bloomLevel,
   onBloomIncrease,
+  onImageGenerated,
 }: ChapterReaderProps) => {
-  const [revealedText, setRevealedText] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
   const [scrollPercentage, setScrollPercentage] = useState(0);
-  const [typingSpeed, setTypingSpeed] = useState(20);
+  const [revealProgress, setRevealProgress] = useState(0);
+  const [showAlicePrompt, setShowAlicePrompt] = useState(false);
+  const [promptContext, setPromptContext] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const speedBoostTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollPos = useRef(0);
+  const accumulatedScroll = useRef(0);
+  const hasShownPrompt = useRef(false);
 
-  // Progressive text revelation with typing effect - preserving paragraph breaks
+  // Parse content to identify section breaks (standalone symbols)
+  const parsedContent = useMemo(() => {
+    const lines = chapter.content.split('\n');
+    return lines.map((line) => ({
+      text: line,
+      isSectionBreak: /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(line.trim()),
+    }));
+  }, [chapter.content]);
+
+  // Reset on chapter change
   useEffect(() => {
-    setRevealedText('');
-    setIsTyping(true);
-    setTypingSpeed(20);
-    let currentIndex = 0;
-    const fullText = chapter.content;
+    setRevealProgress(0);
+    accumulatedScroll.current = 0;
+    lastScrollPos.current = 0;
+    hasShownPrompt.current = false;
+    setShowAlicePrompt(false);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [chapter.number]);
 
-    const typeInterval = setInterval(() => {
-      if (currentIndex < fullText.length) {
-        setRevealedText(fullText.substring(0, currentIndex + 1));
-        currentIndex++;
-      } else {
-        setIsTyping(false);
-        clearInterval(typeInterval);
-      }
-    }, typingSpeed);
-
-    return () => clearInterval(typeInterval);
-  }, [chapter.number, typingSpeed]);
-
-  // Scroll tracking for bloom system and speed boost
+  // Parallax scroll-based text revelation
   useEffect(() => {
     const handleScroll = () => {
-      if (containerRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-        const percentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
-        setScrollPercentage(percentage);
+      if (!containerRef.current) return;
 
-        // Increase bloom at certain scroll milestones
-        if (percentage > 50 && bloomLevel < 5) {
-          onBloomIncrease();
-        }
-        if (percentage > 90 && bloomLevel < 10) {
-          onBloomIncrease();
-        }
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+      const maxScroll = scrollHeight - clientHeight;
+      
+      // Calculate scroll percentage
+      const percentage = maxScroll > 0 ? (scrollTop / maxScroll) * 100 : 0;
+      setScrollPercentage(percentage);
 
-        // Speed boost when scrolling to bottom during typing
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-        if (isAtBottom && isTyping) {
-          setTypingSpeed(5);
-          
-          // Clear existing timeout
-          if (speedBoostTimeoutRef.current) {
-            clearTimeout(speedBoostTimeoutRef.current);
-          }
-          
-          // Reset speed after 2 seconds of no scroll activity
-          speedBoostTimeoutRef.current = setTimeout(() => {
-            setTypingSpeed(20);
-          }, 2000);
-        }
+      // Calculate scroll velocity and accumulate
+      const scrollDelta = Math.abs(scrollTop - lastScrollPos.current);
+      lastScrollPos.current = scrollTop;
+      accumulatedScroll.current += scrollDelta;
+
+      // Reveal text based on accumulated scroll distance
+      // Every 500px of scrolling reveals ~25% more text
+      const totalContentLength = chapter.content.length;
+      const revealRate = totalContentLength / 2000; // Adjust for desired reveal speed
+      const newProgress = Math.min(
+        accumulatedScroll.current * revealRate / totalContentLength,
+        1
+      );
+      setRevealProgress(newProgress);
+
+      // Increase bloom at scroll milestones
+      if (percentage > 50 && bloomLevel < 5) {
+        onBloomIncrease();
+      }
+      if (percentage > 90 && bloomLevel < 10) {
+        onBloomIncrease();
+      }
+
+      // Trigger ALICE prompt at 50% scroll (once per chapter)
+      if (percentage > 50 && !hasShownPrompt.current) {
+        hasShownPrompt.current = true;
+        const contextStart = Math.floor(totalContentLength * 0.4);
+        const contextEnd = Math.floor(totalContentLength * 0.6);
+        setPromptContext(chapter.content.substring(contextStart, contextEnd));
+        setShowAlicePrompt(true);
       }
     };
 
@@ -86,14 +103,29 @@ export const ChapterReader = ({
     container?.addEventListener('scroll', handleScroll);
     return () => {
       container?.removeEventListener('scroll', handleScroll);
-      if (speedBoostTimeoutRef.current) {
-        clearTimeout(speedBoostTimeoutRef.current);
-      }
     };
-  }, [bloomLevel, onBloomIncrease, isTyping]);
+  }, [bloomLevel, onBloomIncrease, chapter.content, chapter.number]);
 
   // Calculate bloom-based color saturation
   const bloomSaturation = 20 + bloomLevel * 6;
+
+  // Calculate revealed text based on scroll progress
+  const revealedCharCount = Math.floor(chapter.content.length * revealProgress);
+  const revealedText = chapter.content.substring(0, revealedCharCount);
+
+  const handleAliceAccept = (imageUrl: string) => {
+    onImageGenerated({
+      imageUrl,
+      chapterNumber: chapter.number,
+      timestamp: new Date().toISOString(),
+      textContext: promptContext,
+    });
+    setShowAlicePrompt(false);
+  };
+
+  const handleAliceDismiss = () => {
+    setShowAlicePrompt(false);
+  };
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background">
@@ -194,15 +226,38 @@ export const ChapterReader = ({
             </div>
           )}
 
-          {/* Story text with typing effect - preserving paragraph breaks */}
-          <div className="story-text text-foreground/90 leading-loose whitespace-pre-wrap">
-            {revealedText}
-            {isTyping && (
-              <span
-                className="inline-block w-2 h-5 ml-1 bg-primary/70"
-                style={{ animation: 'typing-cursor 1s infinite' }}
-              />
-            )}
+          {/* Story text with parallax scroll reveal */}
+          <div className="story-text text-foreground/90 leading-loose space-y-4">
+            {parsedContent.map((line, index) => {
+              const lineStartPos = parsedContent
+                .slice(0, index)
+                .reduce((acc, l) => acc + l.text.length + 1, 0);
+              const lineEndPos = lineStartPos + line.text.length;
+              
+              // Calculate if this line should be visible
+              const isVisible = lineStartPos < revealedCharCount;
+              const visibleChars = Math.max(0, Math.min(
+                line.text.length,
+                revealedCharCount - lineStartPos
+              ));
+
+              if (!isVisible) return null;
+
+              const visibleText = line.text.substring(0, visibleChars);
+
+              return (
+                <div
+                  key={index}
+                  className={line.isSectionBreak ? 'text-center' : 'text-justify'}
+                  style={{
+                    opacity: visibleChars / line.text.length,
+                    transition: 'opacity 0.3s ease-out',
+                  }}
+                >
+                  {visibleText}
+                </div>
+              );
+            })}
           </div>
 
           {/* Bloom indicator */}
@@ -228,6 +283,16 @@ export const ChapterReader = ({
           </div>
         </article>
       </div>
+
+      {/* ALICE prompt overlay */}
+      {showAlicePrompt && (
+        <AlicePrompt
+          textContext={promptContext}
+          chapterNumber={chapter.number}
+          onAccept={handleAliceAccept}
+          onDismiss={handleAliceDismiss}
+        />
+      )}
     </div>
   );
 };

@@ -131,4 +131,16 @@ All colors MUST be HSL.
     0%, 100% { opacity: 0.1; }
     50% { opacity: 0.3; }
   }
+  
+  @keyframes float-sphere {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    33% {
+      transform: translateY(-10px) rotate(120deg);
+    }
+    66% {
+      transform: translateY(5px) rotate(240deg);
+    }
+  }
 }
