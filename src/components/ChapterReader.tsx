@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { AlicePrompt } from '@/components/AlicePrompt';
 import { GeneratedImage } from '@/hooks/useImageGeneration';
+import { alicePromptPoints } from '@/utils/alicePromptPoints';
 
 interface ChapterReaderProps {
   chapter: Chapter;
@@ -13,6 +14,8 @@ interface ChapterReaderProps {
   bloomLevel: number;
   onBloomIncrease: () => void;
   onImageGenerated: (image: GeneratedImage) => void;
+  onOpenGallery: () => void;
+  galleryImageCount: number;
 }
 
 export const ChapterReader = ({
@@ -23,6 +26,8 @@ export const ChapterReader = ({
   bloomLevel,
   onBloomIncrease,
   onImageGenerated,
+  onOpenGallery,
+  galleryImageCount,
 }: ChapterReaderProps) => {
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [revealProgress, setRevealProgress] = useState(0.15);
@@ -32,6 +37,12 @@ export const ChapterReader = ({
   const lastScrollPos = useRef(0);
   const accumulatedScroll = useRef(0);
   const hasShownPrompt = useRef(false);
+
+  // Get the prompt point for this chapter
+  const promptPoint = useMemo(
+    () => alicePromptPoints.find(p => p.chapterNumber === chapter.number),
+    [chapter.number]
+  );
 
   // Parse content to identify section breaks (standalone symbols)
   const parsedContent = useMemo(() => {
@@ -89,12 +100,10 @@ export const ChapterReader = ({
         onBloomIncrease();
       }
 
-      // Trigger ALICE prompt at 50% scroll (once per chapter)
-      if (percentage > 50 && !hasShownPrompt.current) {
+      // Show ALICE prompt at defined trigger point (once per chapter)
+      if (promptPoint && percentage >= promptPoint.triggerPosition * 100 && !hasShownPrompt.current) {
         hasShownPrompt.current = true;
-        const contextStart = Math.floor(totalContentLength * 0.4);
-        const contextEnd = Math.floor(totalContentLength * 0.6);
-        setPromptContext(chapter.content.substring(contextStart, contextEnd));
+        setPromptContext(promptPoint.textPassage);
         setShowAlicePrompt(true);
       }
     };
@@ -162,15 +171,38 @@ export const ChapterReader = ({
       {/* Header - Chapter info and navigation */}
       <header className="relative z-10 border-b border-border/30 bg-card/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onNavigate('menu')}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <List className="w-4 h-4 mr-2" />
-            Chapters
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate('menu')}
+              className="text-muted-foreground hover:text-primary"
+            >
+              <List className="w-4 h-4 mr-2" />
+              Chapters
+            </Button>
+            
+            {/* Gallery sphere button */}
+            <button
+              onClick={onOpenGallery}
+              className="relative group"
+              title="View Gallery"
+            >
+              <div 
+                className="w-8 h-8 rounded-full border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-110"
+                style={{
+                  background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 60% / 0.4), hsl(190 ${bloomSaturation}% 35% / 0.8))`,
+                  boxShadow: `0 0 15px hsl(190 ${bloomSaturation}% 45% / 0.3)`,
+                }}
+              >
+                {galleryImageCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground system-text">
+                    {galleryImageCount}
+                  </div>
+                )}
+              </div>
+            </button>
+          </div>
 
           <div className="text-center">
             <div className="system-text text-primary/70 text-xs uppercase tracking-wider">

@@ -4,11 +4,12 @@ import { ChapterReader } from '@/components/ChapterReader';
 import { ChapterMenu } from '@/components/ChapterMenu';
 import { SystemDiagnostic } from '@/components/SystemDiagnostic';
 import { DomeViewer } from '@/components/DomeViewer';
+import { ImageReveal } from '@/components/ImageReveal';
 import { parseStory, Chapter } from '@/utils/storyParser';
-import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { useImageGeneration, GeneratedImage } from '@/hooks/useImageGeneration';
 import storyData from '@/data/story.txt?raw';
 
-type ViewMode = 'entry' | 'menu' | 'diagnostic' | 'reading' | 'gallery';
+type ViewMode = 'entry' | 'menu' | 'diagnostic' | 'reading' | 'gallery' | 'imageReveal';
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('entry');
@@ -16,6 +17,7 @@ const Index = () => {
   const [currentChapter, setCurrentChapter] = useState(1);
   const [bloomLevel, setBloomLevel] = useState(0);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [revealImage, setRevealImage] = useState<GeneratedImage | null>(null);
   const { images, addImage } = useImageGeneration();
 
   // Parse story on mount
@@ -80,6 +82,17 @@ const Index = () => {
     setViewMode('menu');
   };
 
+  const handleImageGenerated = (imageData: GeneratedImage) => {
+    addImage(imageData);
+    setRevealImage(imageData);
+    setViewMode('imageReveal');
+  };
+
+  const handleImageRevealDismiss = () => {
+    setRevealImage(null);
+    setViewMode('reading');
+  };
+
   const currentChapterData = chapters.find((ch) => ch.number === currentChapter);
 
   if (chapters.length === 0) {
@@ -113,6 +126,15 @@ const Index = () => {
           onClose={handleCloseGallery}
         />
       )}
+
+      {viewMode === 'imageReveal' && revealImage && (
+        <ImageReveal
+          imageUrl={revealImage.imageUrl}
+          chapterNumber={revealImage.chapterNumber}
+          textPassage={revealImage.textContext}
+          onDismiss={handleImageRevealDismiss}
+        />
+      )}
       
       {viewMode === 'diagnostic' && showDiagnostic && (
         <SystemDiagnostic
@@ -129,7 +151,9 @@ const Index = () => {
           canGoNext={currentChapter < chapters.length}
           bloomLevel={bloomLevel}
           onBloomIncrease={handleBloomIncrease}
-          onImageGenerated={addImage}
+          onImageGenerated={handleImageGenerated}
+          onOpenGallery={handleOpenGallery}
+          galleryImageCount={images.length}
         />
       )}
     </>

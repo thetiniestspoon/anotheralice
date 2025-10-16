@@ -82,24 +82,38 @@ export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
         </div>
       </div>
 
-      {/* Full-size image viewer */}
+      {/* Full-size image viewer with full text passage */}
       {selectedImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md animate-fade-in p-4 overflow-y-auto"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="relative max-w-4xl w-full mx-4">
-            <img
-              src={selectedImage.imageUrl}
-              alt={`Chapter ${selectedImage.chapterNumber} visualization`}
-              className="w-full h-auto rounded-lg shadow-2xl border border-primary/20"
-            />
-            <div className="mt-4 text-center space-y-2">
-              <div className="system-text text-primary/70 text-sm">
+          <div className="relative max-w-4xl w-full space-y-6 my-8">
+            {/* Image with glow effect */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-lg" />
+              <img
+                src={selectedImage.imageUrl}
+                alt={`Chapter ${selectedImage.chapterNumber} visualization`}
+                className="relative w-full h-auto rounded-lg shadow-2xl border border-primary/30"
+              />
+            </div>
+            
+            {/* Full caption with complete text passage */}
+            <div className="space-y-4 text-center px-6">
+              <div className="system-text text-primary/70 text-sm uppercase tracking-wider">
                 Chapter {selectedImage.chapterNumber}
               </div>
-              <p className="text-foreground/60 text-xs max-w-2xl mx-auto line-clamp-3">
-                {selectedImage.textContext.substring(0, 200)}...
+              
+              {/* Full verbatim text passage */}
+              <div className="max-w-2xl mx-auto">
+                <blockquote className="text-foreground/90 text-sm leading-relaxed italic border-l-2 border-primary/30 pl-4 text-left">
+                  "{selectedImage.textContext}"
+                </blockquote>
+              </div>
+
+              <p className="system-text text-muted-foreground/50 text-xs pt-4">
+                TAP ANYWHERE TO CLOSE
               </p>
             </div>
           </div>

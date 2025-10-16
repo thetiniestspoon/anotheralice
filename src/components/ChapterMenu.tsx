@@ -222,13 +222,37 @@ export const ChapterMenu = ({
       </div>
 
       <div className="relative z-10 w-full max-w-4xl mx-auto px-8 py-16">
-        {/* Header */}
+        {/* Header with Gallery Button */}
         <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-3 text-primary/70 mb-2">
-            <BookOpen className="w-6 h-6" />
-            <span className="system-text text-sm uppercase tracking-widest">
+          <div className="flex items-center justify-center gap-6 mb-2">
+            <BookOpen className="w-6 h-6 text-primary/70" />
+            <span className="system-text text-sm uppercase tracking-widest text-primary/70">
               Memory Archive
             </span>
+            <button
+              onClick={onOpenGallery}
+              className="relative group"
+              title="View Gallery"
+            >
+              <div 
+                className="w-10 h-10 rounded-full border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-110"
+                style={{
+                  background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 60% / 0.4), hsl(190 ${bloomSaturation}% 35% / 0.8))`,
+                  boxShadow: `0 0 20px hsl(190 ${bloomSaturation}% 45% / 0.3)`,
+                }}
+              >
+                {galleryImageCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground system-text">
+                    {galleryImageCount}
+                  </div>
+                )}
+              </div>
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                <span className="system-text text-xs text-muted-foreground">
+                  {galleryImageCount > 0 ? 'VIEW GALLERY' : 'GALLERY'}
+                </span>
+              </div>
+            </button>
           </div>
           <h1 className="text-5xl font-light tracking-wide text-foreground">
             Another ALICE
