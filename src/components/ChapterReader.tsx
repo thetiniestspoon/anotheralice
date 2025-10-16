@@ -34,7 +34,6 @@ export const ChapterReader = ({
   const [showAlicePrompt, setShowAlicePrompt] = useState(false);
   const [activePromptPoint, setActivePromptPoint] = useState<AlicePromptPoint | null>(null);
   const [usedPointIds, setUsedPointIds] = useState<Set<string>>(new Set());
-  const [embeddedImages, setEmbeddedImages] = useState<Map<string, string>>(new Map());
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollPos = useRef(0);
@@ -61,7 +60,6 @@ export const ChapterReader = ({
     accumulatedScroll.current = 0;
     lastScrollPos.current = 0;
     setUsedPointIds(new Set());
-    setEmbeddedImages(new Map());
     setShowAlicePrompt(false);
     setActivePromptPoint(null);
     setPendingImageUrl(null);
@@ -134,7 +132,7 @@ export const ChapterReader = ({
     setActivePromptPoint(null);
   };
 
-  // Handle clicking the pending image to embed it
+  // Handle clicking the pending image to add to gallery and dismiss
   const handlePendingImageClick = () => {
     if (pendingImageUrl && activePromptPoint) {
       // Add to gallery
@@ -145,8 +143,7 @@ export const ChapterReader = ({
         textContext: activePromptPoint.textPassage,
       });
       
-      // Embed the image
-      setEmbeddedImages(prev => new Map(prev).set(activePromptPoint.id, pendingImageUrl));
+      // Mark this point as used so dot disappears
       setUsedPointIds(prev => new Set(prev).add(activePromptPoint.id));
       
       // Clear pending state
@@ -155,7 +152,7 @@ export const ChapterReader = ({
     }
   };
 
-  // Parse content with embedded images and dots
+  // Parse content with glowing dots (no embedded images)
   const renderContent = () => {
     const elements: JSX.Element[] = [];
     let textBuffer = '';
@@ -193,43 +190,30 @@ export const ChapterReader = ({
       }
       
       // Check if we should show the dot at this point
-      if (point.characterPosition <= revealedCharCount) {
+      if (point.characterPosition <= revealedCharCount && !usedPointIds.has(point.id)) {
         // Flush text before the dot
         flushTextBuffer(`text-${index}`);
         
-        // Check if this point has an embedded image
-        const embeddedImage = embeddedImages.get(point.id);
-        if (embeddedImage) {
-          elements.push(
-            <img
-              key={`img-${point.id}`}
-              src={embeddedImage}
-              alt={point.description}
-              className="float-right ml-6 mb-6 w-80 h-80 object-cover rounded-lg border-2 border-primary/40 shadow-2xl"
-            />
-          );
-        } else if (!usedPointIds.has(point.id)) {
-          // Show glowing dot as a larger, more visible element
-          elements.push(
-            <span 
-              key={`dot-wrapper-${point.id}`}
-              className="inline-block align-middle mx-2"
+        // Show glowing dot
+        elements.push(
+          <span 
+            key={`dot-wrapper-${point.id}`}
+            className="inline-block align-middle mx-2"
+          >
+            <button
+              onClick={() => handleDotClick(point)}
+              className="relative w-4 h-4 rounded-full bg-primary/80 hover:bg-primary hover:scale-150 transition-all duration-300 cursor-pointer group"
+              style={{
+                boxShadow: `0 0 20px hsl(190 ${bloomSaturation}% 45% / 0.8)`,
+                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              }}
+              aria-label={`Visualize: ${point.description}`}
+              title="Click to visualize this moment"
             >
-              <button
-                onClick={() => handleDotClick(point)}
-                className="relative w-4 h-4 rounded-full bg-primary/80 hover:bg-primary hover:scale-150 transition-all duration-300 cursor-pointer group"
-                style={{
-                  boxShadow: `0 0 20px hsl(190 ${bloomSaturation}% 45% / 0.8)`,
-                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                }}
-                aria-label={`Visualize: ${point.description}`}
-                title="Click to visualize this moment"
-              >
-                <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
-              </button>
-            </span>
-          );
-        }
+              <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+            </button>
+          </span>
+        );
         
         currentPos = point.characterPosition;
       }
@@ -399,7 +383,7 @@ export const ChapterReader = ({
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
               <div className="bg-card/90 backdrop-blur-sm px-6 py-3 rounded-full border border-primary/20 shadow-lg">
                 <span className="system-text text-sm text-primary">
-                  TAP TO EMBED IN TEXT
+                  TAP TO ADD TO GALLERY
                 </span>
               </div>
             </div>

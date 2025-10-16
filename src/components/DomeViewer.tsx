@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { GeneratedImage } from '@/hooks/useImageGeneration';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,52 @@ interface DomeViewerProps {
   onClose: () => void;
 }
 
+// Static TV noise component
+const StaticNoise = () => (
+  <div className="w-full h-full relative overflow-hidden bg-muted/10">
+    <div 
+      className="absolute inset-0 opacity-20"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        animation: 'noise 0.2s steps(10) infinite',
+      }}
+    />
+  </div>
+);
+
 export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
+  const [chapterIndices, setChapterIndices] = useState<Record<number, number>>({});
+
+  // Group images by chapter (1-12)
+  const imagesByChapter = useMemo(() => {
+    const grouped: Record<number, GeneratedImage[]> = {};
+    for (let i = 1; i <= 12; i++) {
+      grouped[i] = [];
+    }
+    images.forEach(img => {
+      if (img.chapterNumber >= 1 && img.chapterNumber <= 12) {
+        grouped[img.chapterNumber].push(img);
+      }
+    });
+    return grouped;
+  }, [images]);
+
+  // Handle cycling through images for a chapter
+  const handleChapterClick = (chapterNum: number) => {
+    const chapterImages = imagesByChapter[chapterNum];
+    if (chapterImages.length === 0) return;
+    
+    const currentIndex = chapterIndices[chapterNum] || 0;
+    const nextIndex = (currentIndex + 1) % chapterImages.length;
+    
+    // If we're at the last image and cycling back, show the full view
+    if (nextIndex === 0 && currentIndex === chapterImages.length - 1) {
+      setSelectedImage(chapterImages[0]);
+    } else {
+      setChapterIndices(prev => ({ ...prev, [chapterNum]: nextIndex }));
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background animate-fade-in">
@@ -36,60 +80,65 @@ export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
         </div>
       </header>
 
-      {/* Dome interior - checkerboard mosaic */}
+      {/* 3x4 Grid - One slot per chapter */}
       <div className="flex-1 overflow-y-auto p-8 bg-gradient-to-b from-background via-background/95 to-background/90">
-        <div className="max-w-6xl mx-auto">
-          {images.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
-              <div className="w-24 h-24 rounded-full border-2 border-primary/20 border-dashed flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10" />
-              </div>
-              <div className="space-y-2">
-                <p className="system-text text-muted-foreground text-sm">
-                  NO VISUALIZATIONS YET
-                </p>
-                <p className="text-foreground/60 text-xs max-w-md">
-                  As you read, ALICE will offer to visualize moments from the story. 
-                  Your created images will appear here in a mosaic gallery.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {images.map((image, index) => (
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(chapterNum => {
+              const chapterImages = imagesByChapter[chapterNum];
+              const currentIndex = chapterIndices[chapterNum] || 0;
+              const currentImage = chapterImages[currentIndex];
+              const hasMultiple = chapterImages.length > 1;
+
+              return (
                 <button
-                  key={image.timestamp}
-                  onClick={() => setSelectedImage(image)}
+                  key={chapterNum}
+                  onClick={() => handleChapterClick(chapterNum)}
                   className="relative aspect-square overflow-hidden rounded-lg border border-border/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 bg-muted/20 group"
-                  style={{
-                    animationDelay: `${index * 50}ms`,
-                  }}
+                  disabled={chapterImages.length === 0}
                 >
-                  <img
-                    src={image.imageUrl}
-                    alt={`Chapter ${image.chapterNumber} visualization`}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
-                    <span className="system-text text-primary/70 text-xs">
-                      CH {image.chapterNumber}
-                    </span>
-                  </div>
+                  {currentImage ? (
+                    <>
+                      <img
+                        src={currentImage.imageUrl}
+                        alt={`Chapter ${chapterNum} visualization`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-3">
+                        <span className="system-text text-primary/70 text-xs">
+                          CH {chapterNum}
+                        </span>
+                        {hasMultiple && (
+                          <span className="system-text text-primary/50 text-[10px] mt-1">
+                            {currentIndex + 1}/{chapterImages.length}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <StaticNoise />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="system-text text-muted-foreground/30 text-xs">
+                          CH {chapterNum}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </button>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Full-size image viewer with full text passage */}
+      {/* Full-size image viewer */}
       {selectedImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md animate-fade-in p-4 overflow-y-auto"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl w-full space-y-6 my-8">
-            {/* Image with glow effect */}
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-lg" />
               <img
@@ -99,13 +148,11 @@ export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
               />
             </div>
             
-            {/* Full caption with complete text passage */}
             <div className="space-y-4 text-center px-6">
               <div className="system-text text-primary/70 text-sm uppercase tracking-wider">
                 Chapter {selectedImage.chapterNumber}
               </div>
               
-              {/* Full verbatim text passage */}
               <div className="max-w-2xl mx-auto">
                 <blockquote className="text-foreground/90 text-sm leading-relaxed italic border-l-2 border-primary/30 pl-4 text-left">
                   "{selectedImage.textContext}"
