@@ -159,69 +159,89 @@ export const ChapterReader = ({
 
   // Parse content with embedded images and dots
   const renderContent = () => {
-    let currentPos = 0;
     const elements: JSX.Element[] = [];
+    let textBuffer = '';
+    let currentPos = 0;
     
     // Sort prompt points by character position
     const sortedPoints = [...promptPoints].sort((a, b) => a.characterPosition - b.characterPosition);
     
-    console.log('Chapter', chapter.number, 'render:', {
-      totalPoints: sortedPoints.length,
-      revealedChars: revealedCharCount,
-      chapterLength: chapter.content.length,
-      points: sortedPoints.map(p => ({
-        id: p.id,
-        pos: p.characterPosition,
-        visible: p.characterPosition <= revealedCharCount
-      }))
-    });
+    const flushTextBuffer = (key: string) => {
+      if (textBuffer) {
+        // Split into paragraphs and preserve breaks
+        const paragraphs = textBuffer.split('\n').filter(p => p.trim());
+        paragraphs.forEach((para, idx) => {
+          // Check if it's a section break (standalone symbol)
+          const isSectionBreak = /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(para.trim());
+          elements.push(
+            <p 
+              key={`${key}-para-${idx}`} 
+              className={isSectionBreak ? 'text-center text-2xl my-8' : 'mb-4'}
+            >
+              {para}
+            </p>
+          );
+        });
+        textBuffer = '';
+      }
+    };
     
     sortedPoints.forEach((point, index) => {
       // Add text before this point
       if (point.characterPosition > currentPos && revealedCharCount > currentPos) {
         const endPos = Math.min(point.characterPosition, revealedCharCount);
-        const textSegment = chapter.content.substring(currentPos, endPos);
-        elements.push(
-          <span key={`text-${index}`}>{textSegment}</span>
-        );
+        textBuffer += chapter.content.substring(currentPos, endPos);
         currentPos = endPos;
       }
       
-      // Check if this point has an embedded image
-      const embeddedImage = embeddedImages.get(point.id);
-      if (embeddedImage) {
-        elements.push(
-          <img
-            key={`img-${point.id}`}
-            src={embeddedImage}
-            alt={point.description}
-            className="inline-block float-right ml-4 mb-4 w-64 h-64 object-cover rounded-lg border-2 border-primary/30 shadow-lg"
-          />
-        );
-      } else if (!usedPointIds.has(point.id) && point.characterPosition <= revealedCharCount) {
-        // Show glowing dot if not used and text is revealed up to this point
-        console.log('Rendering dot for', point.id);
-        elements.push(
-          <button
-            key={`dot-${point.id}`}
-            onClick={() => handleDotClick(point)}
-            className="inline-block mx-1 w-2 h-2 rounded-full bg-primary/60 animate-pulse hover:scale-150 transition-transform cursor-pointer"
-            style={{
-              boxShadow: `0 0 10px hsl(190 ${bloomSaturation}% 45% / 0.6)`,
-            }}
-            aria-label={`Visualize: ${point.description}`}
-          />
-        );
+      // Check if we should show the dot at this point
+      if (point.characterPosition <= revealedCharCount) {
+        // Flush text before the dot
+        flushTextBuffer(`text-${index}`);
+        
+        // Check if this point has an embedded image
+        const embeddedImage = embeddedImages.get(point.id);
+        if (embeddedImage) {
+          elements.push(
+            <img
+              key={`img-${point.id}`}
+              src={embeddedImage}
+              alt={point.description}
+              className="float-right ml-6 mb-6 w-80 h-80 object-cover rounded-lg border-2 border-primary/40 shadow-2xl"
+            />
+          );
+        } else if (!usedPointIds.has(point.id)) {
+          // Show glowing dot as a larger, more visible element
+          elements.push(
+            <span 
+              key={`dot-wrapper-${point.id}`}
+              className="inline-block align-middle mx-2"
+            >
+              <button
+                onClick={() => handleDotClick(point)}
+                className="relative w-4 h-4 rounded-full bg-primary/80 hover:bg-primary hover:scale-150 transition-all duration-300 cursor-pointer group"
+                style={{
+                  boxShadow: `0 0 20px hsl(190 ${bloomSaturation}% 45% / 0.8)`,
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                }}
+                aria-label={`Visualize: ${point.description}`}
+                title="Click to visualize this moment"
+              >
+                <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+              </button>
+            </span>
+          );
+        }
+        
         currentPos = point.characterPosition;
       }
     });
     
     // Add remaining text
     if (currentPos < revealedCharCount) {
-      elements.push(
-        <span key="text-final">{chapter.content.substring(currentPos, revealedCharCount)}</span>
-      );
+      textBuffer += chapter.content.substring(currentPos, revealedCharCount);
     }
+    flushTextBuffer('text-final');
     
     return elements;
   };
@@ -328,7 +348,7 @@ export const ChapterReader = ({
           )}
 
           {/* Story text with embedded images and glowing dots */}
-          <div className="story-text text-foreground/90 leading-loose text-justify">
+          <div className="story-text text-foreground/90 leading-loose">
             {renderContent()}
           </div>
 
