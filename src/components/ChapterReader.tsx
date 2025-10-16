@@ -152,7 +152,7 @@ export const ChapterReader = ({
     }
   };
 
-  // Parse content with glowing dots (no embedded images)
+  // Parse content with glowing dots and styled separators
   const renderContent = () => {
     const elements: JSX.Element[] = [];
     let textBuffer = '';
@@ -166,16 +166,73 @@ export const ChapterReader = ({
         // Split into paragraphs and preserve breaks
         const paragraphs = textBuffer.split('\n').filter(p => p.trim());
         paragraphs.forEach((para, idx) => {
-          // Check if it's a section break (standalone symbol)
-          const isSectionBreak = /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(para.trim());
-          elements.push(
-            <p 
-              key={`${key}-para-${idx}`} 
-              className={isSectionBreak ? 'text-center text-2xl my-8' : 'mb-4'}
-            >
-              {para}
-            </p>
-          );
+          const trimmed = para.trim();
+          
+          // Check for special separator patterns
+          const isOrbSeparator = /^⸻⸻⚪/.test(trimmed) || /^⚪⸻⚪/.test(trimmed);
+          const isLineSeparator = /^_{10,}$/.test(trimmed);
+          const isSectionBreak = /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(trimmed);
+          
+          if (isOrbSeparator || isLineSeparator) {
+            // Render as styled orb separator
+            elements.push(
+              <div key={`${key}-para-${idx}`} className="flex items-center justify-center my-12">
+                <div className="relative">
+                  {/* Outer glow */}
+                  <div 
+                    className="absolute inset-0 rounded-full blur-xl opacity-30"
+                    style={{
+                      background: `radial-gradient(circle, hsl(190 ${bloomSaturation}% 45%) 0%, transparent 70%)`,
+                      width: '80px',
+                      height: '80px',
+                      transform: 'translate(-50%, -50%)',
+                      top: '50%',
+                      left: '50%',
+                    }}
+                  />
+                  {/* Core orb */}
+                  <div
+                    className="relative w-8 h-8 rounded-full animate-pulse"
+                    style={{
+                      background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 65%), hsl(190 ${bloomSaturation}% 35%))`,
+                      boxShadow: `0 0 30px hsl(190 ${bloomSaturation}% 45% / 0.6), inset 0 0 10px hsl(190 ${bloomSaturation}% 25%)`,
+                    }}
+                  />
+                  {/* Decorative lines if present */}
+                  {isOrbSeparator && (
+                    <>
+                      <div 
+                        className="absolute top-1/2 -left-12 w-10 h-px opacity-40"
+                        style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
+                      />
+                      <div 
+                        className="absolute top-1/2 -right-12 w-10 h-px opacity-40"
+                        style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          } else if (isSectionBreak) {
+            elements.push(
+              <p 
+                key={`${key}-para-${idx}`} 
+                className="text-center text-2xl my-8"
+              >
+                {para}
+              </p>
+            );
+          } else {
+            elements.push(
+              <p 
+                key={`${key}-para-${idx}`} 
+                className="mb-4"
+              >
+                {para}
+              </p>
+            );
+          }
         });
         textBuffer = '';
       }
