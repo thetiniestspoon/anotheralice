@@ -73,25 +73,48 @@ export const TextCaptureBar = ({
   }, [isDragging, onPositionChange]);
 
   return (
-    <div
-      className="fixed left-0 right-0 pointer-events-auto z-10"
-      style={{
-        top: `${position}vh`,
-        transform: 'translateY(-50%)',
-        height: `${height}px`,
-        background: `linear-gradient(to bottom, 
-          transparent 0%, 
-          hsl(190 ${bloomSaturation}% 45% / 0.15) 20%,
-          hsl(190 ${bloomSaturation}% 45% / 0.15) 80%,
-          transparent 100%)`,
-        borderTop: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
-        borderBottom: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
-        cursor: isDragging ? 'grabbing' : 'grab',
-        transition: isDragging ? 'none' : 'all 200ms ease-out',
-      }}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
-      aria-label="Drag to adjust capture position"
-    />
+    <>
+      {/* Visual bar overlay - non-blocking for scrolling */}
+      <div
+        className="fixed left-0 right-0 pointer-events-none z-10"
+        style={{
+          top: `${position}vh`,
+          transform: 'translateY(-50%)',
+          height: `${height}px`,
+          background: `linear-gradient(to bottom, 
+            transparent 0%, 
+            hsl(190 ${bloomSaturation}% 45% / 0.15) 20%,
+            hsl(190 ${bloomSaturation}% 45% / 0.15) 80%,
+            transparent 100%)`,
+          borderTop: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
+          borderBottom: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
+          transition: isDragging ? 'none' : 'all 200ms ease-out',
+        }}
+      />
+      
+      {/* Draggable handle on the left edge */}
+      <div
+        className="fixed left-0 z-20 pointer-events-auto flex items-center justify-center transition-all hover:bg-primary/20"
+        style={{
+          top: `${position}vh`,
+          transform: 'translateY(-50%)',
+          width: '40px',
+          height: `${height}px`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          transition: isDragging ? 'none' : 'all 200ms ease-out',
+          borderRadius: '0 8px 8px 0',
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        aria-label="Drag to adjust capture position"
+      >
+        {/* Grip indicator */}
+        <div className="flex flex-col gap-1 opacity-40">
+          <div className="w-4 h-0.5 rounded-full" style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }} />
+          <div className="w-4 h-0.5 rounded-full" style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }} />
+          <div className="w-4 h-0.5 rounded-full" style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }} />
+        </div>
+      </div>
+    </>
   );
 };
