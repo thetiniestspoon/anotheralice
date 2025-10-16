@@ -33,6 +33,7 @@ export const ChapterReader = ({
   const [revealProgress, setRevealProgress] = useState(0.15);
   const [showAlicePrompt, setShowAlicePrompt] = useState(false);
   const [promptContext, setPromptContext] = useState('');
+  const [pauseReveal, setPauseReveal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollPos = useRef(0);
   const accumulatedScroll = useRef(0);
@@ -59,6 +60,7 @@ export const ChapterReader = ({
     accumulatedScroll.current = 0;
     lastScrollPos.current = 0;
     hasShownPrompt.current = false;
+    setPauseReveal(false);
     setShowAlicePrompt(false);
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
@@ -82,15 +84,17 @@ export const ChapterReader = ({
       lastScrollPos.current = scrollTop;
       accumulatedScroll.current += scrollDelta;
 
-      // Reveal text based on accumulated scroll distance
-      // Every 250px of scrolling reveals more text
-      const totalContentLength = chapter.content.length;
-      const revealRate = totalContentLength / 1000; // Adjust for desired reveal speed
-      const newProgress = Math.min(
-        0.15 + (accumulatedScroll.current * revealRate / totalContentLength) * 0.85,
-        1
-      );
-      setRevealProgress(newProgress);
+      // Reveal text based on accumulated scroll distance (unless paused for ALICE)
+      if (!pauseReveal) {
+        // Every 250px of scrolling reveals more text
+        const totalContentLength = chapter.content.length;
+        const revealRate = totalContentLength / 1000; // Adjust for desired reveal speed
+        const newProgress = Math.min(
+          0.15 + (accumulatedScroll.current * revealRate / totalContentLength) * 0.85,
+          1
+        );
+        setRevealProgress(newProgress);
+      }
 
       // Increase bloom at scroll milestones
       if (percentage > 50 && bloomLevel < 5) {
@@ -103,6 +107,7 @@ export const ChapterReader = ({
       // Show ALICE prompt at defined trigger point (once per chapter)
       if (promptPoint && percentage >= promptPoint.triggerPosition * 100 && !hasShownPrompt.current) {
         hasShownPrompt.current = true;
+        setPauseReveal(true); // Pause text revelation
         setPromptContext(promptPoint.textPassage);
         setShowAlicePrompt(true);
       }
@@ -134,6 +139,7 @@ export const ChapterReader = ({
 
   const handleAliceDismiss = () => {
     setShowAlicePrompt(false);
+    setPauseReveal(false); // Resume text revelation
   };
 
   return (
