@@ -8,14 +8,14 @@ interface DomeViewerProps {
   onClose: () => void;
 }
 
-// Static TV noise component
+// Subtle static noise component
 const StaticNoise = () => (
-  <div className="w-full h-full relative overflow-hidden bg-muted/10">
+  <div className="w-full h-full relative overflow-hidden bg-muted/5">
     <div 
-      className="absolute inset-0 opacity-20"
+      className="absolute inset-0 opacity-5"
       style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        animation: 'noise 0.2s steps(10) infinite',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        animation: 'noise 1s steps(8) infinite',
       }}
     />
   </div>
@@ -24,6 +24,8 @@ const StaticNoise = () => (
 export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [chapterIndices, setChapterIndices] = useState<Record<number, number>>({});
+  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isLongPress, setIsLongPress] = useState(false);
 
   // Group images by chapter (1-12)
   const imagesByChapter = useMemo(() => {
@@ -39,20 +41,46 @@ export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
     return grouped;
   }, [images]);
 
-  // Handle cycling through images for a chapter
-  const handleChapterClick = (chapterNum: number) => {
-    const chapterImages = imagesByChapter[chapterNum];
-    if (chapterImages.length === 0) return;
-    
-    const currentIndex = chapterIndices[chapterNum] || 0;
-    const nextIndex = (currentIndex + 1) % chapterImages.length;
-    
-    // If we're at the last image and cycling back, show the full view
-    if (nextIndex === 0 && currentIndex === chapterImages.length - 1) {
-      setSelectedImage(chapterImages[0]);
-    } else {
-      setChapterIndices(prev => ({ ...prev, [chapterNum]: nextIndex }));
+  // Handle press start (mouse down or touch start)
+  const handlePressStart = (chapterNum: number) => {
+    setIsLongPress(false);
+    const timer = setTimeout(() => {
+      setIsLongPress(true);
+      const chapterImages = imagesByChapter[chapterNum];
+      if (chapterImages.length > 0) {
+        const currentIndex = chapterIndices[chapterNum] || 0;
+        setSelectedImage(chapterImages[currentIndex]);
+      }
+    }, 500); // 500ms for long press
+    setPressTimer(timer);
+  };
+
+  // Handle press end (mouse up or touch end)
+  const handlePressEnd = (chapterNum: number) => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
     }
+    
+    // Only cycle if it was a quick tap (not a long press)
+    if (!isLongPress) {
+      const chapterImages = imagesByChapter[chapterNum];
+      if (chapterImages.length > 0) {
+        const currentIndex = chapterIndices[chapterNum] || 0;
+        const nextIndex = (currentIndex + 1) % chapterImages.length;
+        setChapterIndices(prev => ({ ...prev, [chapterNum]: nextIndex }));
+      }
+    }
+    setIsLongPress(false);
+  };
+
+  // Handle press cancel (mouse leave or touch cancel)
+  const handlePressCancel = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
+    }
+    setIsLongPress(false);
   };
 
   return (
@@ -93,7 +121,12 @@ export const DomeViewer = ({ images, onClose }: DomeViewerProps) => {
               return (
                 <button
                   key={chapterNum}
-                  onClick={() => handleChapterClick(chapterNum)}
+                  onMouseDown={() => handlePressStart(chapterNum)}
+                  onMouseUp={() => handlePressEnd(chapterNum)}
+                  onMouseLeave={handlePressCancel}
+                  onTouchStart={() => handlePressStart(chapterNum)}
+                  onTouchEnd={() => handlePressEnd(chapterNum)}
+                  onTouchCancel={handlePressCancel}
                   className="relative aspect-square overflow-hidden rounded-lg border border-border/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 bg-muted/20 group"
                   disabled={chapterImages.length === 0}
                 >
