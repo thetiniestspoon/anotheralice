@@ -181,27 +181,6 @@ export const ChapterReader = ({
               <List className="w-4 h-4 mr-2" />
               Chapters
             </Button>
-            
-            {/* Gallery sphere button */}
-            <button
-              onClick={onOpenGallery}
-              className="relative group"
-              title="View Gallery"
-            >
-              <div 
-                className="w-8 h-8 rounded-full border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-110"
-                style={{
-                  background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 60% / 0.4), hsl(190 ${bloomSaturation}% 35% / 0.8))`,
-                  boxShadow: `0 0 15px hsl(190 ${bloomSaturation}% 45% / 0.3)`,
-                }}
-              >
-                {galleryImageCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground system-text">
-                    {galleryImageCount}
-                  </div>
-                )}
-              </div>
-            </button>
           </div>
 
           <div className="text-center">
