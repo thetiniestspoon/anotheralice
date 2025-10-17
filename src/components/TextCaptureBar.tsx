@@ -7,7 +7,7 @@ interface TextCaptureBarProps {
 }
 
 export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarProps) => {
-  const [barY, setBarY] = useState(50); // percentage from top
+  const [barY, setBarY] = useState(80); // percentage from top
   const [isDragging, setIsDragging] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
 
