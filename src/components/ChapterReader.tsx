@@ -153,8 +153,8 @@ export const ChapterReader = ({
     paragraphs.forEach((para, idx) => {
       const trimmed = para.trim();
       
-      // Check for special separator patterns
-      const isOrbSeparator = /^⸻⸻⚪/.test(trimmed) || /^⚪⸻⚪/.test(trimmed);
+      // Check for special separator patterns - all dividers with circles/orbs
+      const isOrbSeparator = /[⸻⚪]/.test(trimmed) && trimmed.length > 1; // Any line+circle combination
       const isLineSeparator = /^_{10,}$/.test(trimmed);
       const isSectionBreak = /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(trimmed);
       
@@ -183,19 +183,17 @@ export const ChapterReader = ({
                   boxShadow: `0 0 30px hsl(190 ${bloomSaturation}% 45% / 0.6), inset 0 0 10px hsl(190 ${bloomSaturation}% 25%)`,
                 }}
               />
-              {/* Decorative lines if present */}
-              {isOrbSeparator && (
-                <>
-                  <div 
-                    className="absolute top-1/2 -left-12 w-10 h-px opacity-40"
-                    style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
-                  />
-                  <div 
-                    className="absolute top-1/2 -right-12 w-10 h-px opacity-40"
-                    style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
-                  />
-                </>
-              )}
+              {/* Decorative lines for all orb separators */}
+              <>
+                <div 
+                  className="absolute top-1/2 -left-12 w-10 h-px opacity-40"
+                  style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
+                />
+                <div 
+                  className="absolute top-1/2 -right-12 w-10 h-px opacity-40"
+                  style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
+                />
+              </>
             </div>
           </div>
         );
