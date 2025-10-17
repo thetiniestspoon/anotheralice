@@ -84,8 +84,7 @@ const Index = () => {
 
   const handleImageGenerated = (imageData: GeneratedImage) => {
     addImage(imageData);
-    setRevealImage(imageData);
-    setViewMode('imageReveal');
+    // Do not navigate to ImageReveal; stay in reading for single-tap return
   };
 
   const handleImageRevealDismiss = () => {
