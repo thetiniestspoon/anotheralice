@@ -48,49 +48,72 @@ export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarPro
     e.stopPropagation();
     if (isDragging) return;
     
-    // Extract text at current bar position (aligned with the bar)
+    // Extract EXACT line text at the bar's Y position using per-character rects
     const article = document.querySelector('article');
     if (!article) return;
 
     const barAbsoluteY = (window.innerHeight * barY) / 100;
 
-    // Find text nodes that intersect with the bar's Y position
+    // First pass: find the line rect that contains (or is closest to) the bar Y
     const walker = document.createTreeWalker(
       article,
       NodeFilter.SHOW_TEXT,
       null
     );
 
-    let textBefore = '';
-    let textAfter = '';
-    let foundBar = false;
+    let targetRect: DOMRect | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
 
     while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const parent = node.parentElement;
-      if (!parent) continue;
-
-      const rect = parent.getBoundingClientRect();
-      const text = node.textContent || '';
-      
-      // Check if this text element intersects with the bar
-      if (!foundBar && rect.top <= barAbsoluteY && rect.bottom >= barAbsoluteY) {
-        foundBar = true;
-        // This is the text at the bar position, capture it and continue for after text
-        textAfter += text;
-      } else if (!foundBar) {
-        // Text before the bar
-        textBefore += text;
-      } else if (textAfter.length < 300) {
-        // Text after the bar
-        textAfter += text;
+      const node = walker.currentNode as Text;
+      if (!node.nodeValue || !node.nodeValue.trim()) continue;
+      const fullRange = document.createRange();
+      fullRange.selectNodeContents(node);
+      const rects = fullRange.getClientRects();
+      for (const r of Array.from(rects)) {
+        const contains = barAbsoluteY >= r.top && barAbsoluteY <= r.bottom;
+        const distance = contains ? 0 : (barAbsoluteY < r.top ? r.top - barAbsoluteY : barAbsoluteY - r.bottom);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          targetRect = r;
+        }
       }
     }
 
-    // Get surrounding context (150 chars before and after the bar position)
-    const contextBefore = textBefore.slice(-150).trim();
-    const contextAfter = textAfter.slice(0, 150).trim();
-    const capturedText = `${contextBefore} ${contextAfter}`.trim();
+    if (!targetRect) return;
+
+    const sameLine = (r: DOMRect) => Math.abs(r.top - targetRect!.top) < 1 && Math.abs(r.bottom - targetRect!.bottom) < 1;
+
+    // Second pass: collect text across all nodes that fall within the exact line band
+    const collectWalker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, null);
+    const charRange = document.createRange();
+    let parts: string[] = [];
+
+    while (collectWalker.nextNode()) {
+      const node = collectWalker.currentNode as Text;
+      const text = node.nodeValue || '';
+      if (!text) continue;
+
+      let start = -1;
+      for (let i = 0; i < text.length; i++) {
+        charRange.setStart(node, i);
+        charRange.setEnd(node, i + 1);
+        const r = charRange.getBoundingClientRect();
+        if (!r || (r.width === 0 && r.height === 0)) continue;
+
+        if (sameLine(r)) {
+          if (start === -1) start = i;
+        } else if (start !== -1) {
+          parts.push(text.slice(start, i));
+          start = -1;
+          if (r.top > targetRect.bottom + 2) break; // we're below the target line
+        }
+      }
+      if (start !== -1) parts.push(text.slice(start));
+    }
+
+    const rawLine = parts.join('');
+    const capturedText = rawLine.replace(/\s+/g, ' ').trim();
 
     onCapture(capturedText);
   };
