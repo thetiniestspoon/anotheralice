@@ -34,6 +34,7 @@ export const ChapterReader = ({
   const [capturedText, setCapturedText] = useState('');
   const [captureBarPosition, setCaptureBarPosition] = useState(50); // Position in vh (50 = middle)
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [spacerHeight, setSpacerHeight] = useState(0);
   
   const CAPTURE_BAR_HEIGHT = 100; // Fixed height in pixels
   
@@ -60,6 +61,31 @@ export const ChapterReader = ({
   // Calculate revealed text based on scroll progress
   const revealedCharCount = Math.floor(chapter.content.length * revealProgress);
   const revealedText = chapter.content.substring(0, revealedCharCount);
+
+  // Update spacer to ensure scrollable content
+  const updateSpacer = () => {
+    if (!containerRef.current || !readingContentRef.current) return;
+    
+    const containerHeight = containerRef.current.clientHeight;
+    const contentHeight = readingContentRef.current.scrollHeight;
+    const minExtra = 200; // Minimum extra scroll space
+    
+    const required = containerHeight + minExtra - contentHeight;
+    setSpacerHeight(required > 0 ? required : 0);
+  };
+
+  // Update spacer when revealed text or ALICE panel changes
+  useEffect(() => {
+    // Delay to ensure DOM has updated
+    const timer = setTimeout(updateSpacer, 50);
+    return () => clearTimeout(timer);
+  }, [revealedText, aliceOpen]);
+
+  // Update spacer on window resize
+  useEffect(() => {
+    window.addEventListener('resize', updateSpacer);
+    return () => window.removeEventListener('resize', updateSpacer);
+  }, []);
 
   // Function to get text that intersects with capture bar
   const getCapturedText = (): string => {
@@ -400,6 +426,9 @@ export const ChapterReader = ({
                   <span>BLOOM LEVEL</span>
                 </div>
               </div>
+
+              {/* Dynamic spacer to ensure scrollability */}
+              <div style={{ height: spacerHeight }} aria-hidden="true" />
             </article>
           </div>
 

@@ -61,7 +61,7 @@ export const TextCaptureBar = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
     document.addEventListener('touchend', handleEnd);
 
     return () => {
