@@ -32,11 +32,8 @@ export const ChapterReader = ({
   const [revealProgress, setRevealProgress] = useState(0.15);
   const [aliceOpen, setAliceOpen] = useState(false);
   const [capturedText, setCapturedText] = useState('');
-  const [captureBarPosition, setCaptureBarPosition] = useState(50); // Position in vh (50 = middle)
+  const [captureBarHeight, setCaptureBarHeight] = useState(100);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [spacerHeight, setSpacerHeight] = useState(0);
-  
-  const CAPTURE_BAR_HEIGHT = 100; // Fixed height in pixels
   
   const containerRef = useRef<HTMLDivElement>(null);
   const readingContentRef = useRef<HTMLDivElement>(null);
@@ -62,37 +59,12 @@ export const ChapterReader = ({
   const revealedCharCount = Math.floor(chapter.content.length * revealProgress);
   const revealedText = chapter.content.substring(0, revealedCharCount);
 
-  // Update spacer to ensure scrollable content
-  const updateSpacer = () => {
-    if (!containerRef.current || !readingContentRef.current) return;
-    
-    const containerHeight = containerRef.current.clientHeight;
-    const contentHeight = readingContentRef.current.scrollHeight;
-    const minExtra = 200; // Minimum extra scroll space
-    
-    const required = containerHeight + minExtra - contentHeight;
-    setSpacerHeight(required > 0 ? required : 0);
-  };
-
-  // Update spacer when revealed text or ALICE panel changes
-  useEffect(() => {
-    // Delay to ensure DOM has updated
-    const timer = setTimeout(updateSpacer, 50);
-    return () => clearTimeout(timer);
-  }, [revealedText, aliceOpen]);
-
-  // Update spacer on window resize
-  useEffect(() => {
-    window.addEventListener('resize', updateSpacer);
-    return () => window.removeEventListener('resize', updateSpacer);
-  }, []);
-
   // Function to get text that intersects with capture bar
   const getCapturedText = (): string => {
     if (!readingContentRef.current) return '';
 
-    const captureBarTop = (window.innerHeight * captureBarPosition / 100) - CAPTURE_BAR_HEIGHT / 2;
-    const captureBarBottom = (window.innerHeight * captureBarPosition / 100) + CAPTURE_BAR_HEIGHT / 2;
+    const captureBarTop = window.innerHeight / 2 - captureBarHeight / 2;
+    const captureBarBottom = window.innerHeight / 2 + captureBarHeight / 2;
 
     const textElements = readingContentRef.current.querySelectorAll('p');
     let capturedParts: string[] = [];
@@ -143,7 +115,7 @@ export const ChapterReader = ({
         clearTimeout(timer);
       };
     }
-  }, [captureBarPosition, revealedText]);
+  }, [captureBarHeight, revealedText]);
 
   // Parallax scroll-based text revelation
   useEffect(() => {
@@ -383,22 +355,11 @@ export const ChapterReader = ({
 
         {/* Main reading area with overlay components */}
         <div className="relative flex-1">
+          {/* Scrollable content */}
           <div
             ref={containerRef}
             className="h-full overflow-y-auto overscroll-contain"
-            style={{
-              touchAction: 'pan-y',
-              WebkitOverflowScrolling: 'touch',
-            }}
           >
-            {/* Text capture bar overlay INSIDE scroll container to ensure touch scrolling works */}
-            <TextCaptureBar
-              position={captureBarPosition}
-              onPositionChange={setCaptureBarPosition}
-              bloomSaturation={bloomSaturation}
-              height={CAPTURE_BAR_HEIGHT}
-            />
-
             <article ref={readingContentRef} className="max-w-3xl mx-auto px-8 py-16 space-y-8">
               {/* Chapter symbol */}
               {chapter.symbol && (
@@ -433,12 +394,16 @@ export const ChapterReader = ({
                   <span>BLOOM LEVEL</span>
                 </div>
               </div>
-
-              {/* Dynamic spacer to ensure scrollability */}
-              <div style={{ height: spacerHeight }} aria-hidden="true" />
             </article>
           </div>
 
+          {/* Text capture bar overlay */}
+          <TextCaptureBar
+            height={captureBarHeight}
+            onHeightChange={setCaptureBarHeight}
+            previewText={capturedText}
+            bloomSaturation={bloomSaturation}
+          />
 
           {/* ALICE button */}
           <AliceButton
@@ -446,7 +411,6 @@ export const ChapterReader = ({
             isDisabled={!capturedText || capturedText.length < 10}
             onClick={handleAliceButtonClick}
             bloomSaturation={bloomSaturation}
-            position={captureBarPosition}
           />
         </div>
       </div>

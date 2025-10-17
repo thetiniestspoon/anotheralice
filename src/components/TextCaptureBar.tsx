@@ -1,84 +1,45 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
+import { Plus, Minus } from 'lucide-react';
 
 interface TextCaptureBarProps {
-  position: number; // Vertical position in vh (0-100)
-  onPositionChange: (position: number) => void;
+  height: number;
+  onHeightChange: (height: number) => void;
+  previewText: string;
   bloomSaturation: number;
-  height?: number; // Fixed height in px, default 100
 }
 
 export const TextCaptureBar = ({
-  position,
-  onPositionChange,
+  height,
+  onHeightChange,
+  previewText,
   bloomSaturation,
-  height = 100,
 }: TextCaptureBarProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartY = useRef(0);
-  const dragStartPosition = useRef(0);
-  const MIN_POSITION = 15; // Minimum 15vh from top
-  const MAX_POSITION = 85; // Maximum 85vh from top
+  const MIN_HEIGHT = 60;
+  const MAX_HEIGHT = 200;
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    dragStartY.current = e.clientY;
-    dragStartPosition.current = position;
-    e.preventDefault();
+  const handleIncrease = () => {
+    if (height < MAX_HEIGHT) {
+      onHeightChange(Math.min(height + 20, MAX_HEIGHT));
+    }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    dragStartY.current = e.touches[0].clientY;
-    dragStartPosition.current = position;
+  const handleDecrease = () => {
+    if (height > MIN_HEIGHT) {
+      onHeightChange(Math.max(height - 20, MIN_HEIGHT));
+    }
   };
 
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const deltaY = e.clientY - dragStartY.current;
-      const deltaVh = (deltaY / window.innerHeight) * 100;
-      const newPosition = Math.max(
-        MIN_POSITION,
-        Math.min(MAX_POSITION, dragStartPosition.current + deltaVh)
-      );
-      onPositionChange(newPosition);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const deltaY = e.touches[0].clientY - dragStartY.current;
-      const deltaVh = (deltaY / window.innerHeight) * 100;
-      const newPosition = Math.max(
-        MIN_POSITION,
-        Math.min(MAX_POSITION, dragStartPosition.current + deltaVh)
-      );
-      onPositionChange(newPosition);
-    };
-
-    const handleEnd = () => {
-      setIsDragging(false);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleEnd);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleEnd);
-    };
-  }, [isDragging, onPositionChange]);
+  const preview = previewText.length > 50 
+    ? previewText.substring(0, 50) + '...' 
+    : previewText;
 
   return (
     <>
-      {/* Visual bar overlay - non-blocking for scrolling */}
+      {/* The capture bar overlay */}
       <div
-        className="fixed left-0 right-0 pointer-events-none z-10"
+        className="fixed left-0 right-0 pointer-events-none z-10 transition-all duration-200"
         style={{
-          top: `${position}vh`,
+          top: '50%',
           transform: 'translateY(-50%)',
           height: `${height}px`,
           background: `linear-gradient(to bottom, 
@@ -88,33 +49,53 @@ export const TextCaptureBar = ({
             transparent 100%)`,
           borderTop: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
           borderBottom: `2px solid hsl(190 ${bloomSaturation}% 45% / 0.4)`,
-          transition: isDragging ? 'none' : 'all 200ms ease-out',
         }}
       />
-      
-      {/* Draggable handle on the left edge */}
+
+      {/* Height adjustment controls */}
       <div
-        className="fixed left-0 z-20 pointer-events-auto flex items-center justify-center transition-all hover:bg-primary/20"
+        className="fixed right-16 z-20 flex flex-col gap-1 pointer-events-auto"
         style={{
-          top: `${position}vh`,
+          top: '50%',
           transform: 'translateY(-50%)',
-          width: '40px',
-          height: `${height}px`,
-          cursor: isDragging ? 'grabbing' : 'grab',
-          transition: isDragging ? 'none' : 'all 200ms ease-out',
-          borderRadius: '0 8px 8px 0',
         }}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        aria-label="Drag to adjust capture position"
       >
-        {/* Grip indicator */}
-        <div className="flex flex-col gap-1 opacity-40">
-          <div className="w-4 h-0.5 rounded-full" style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }} />
-          <div className="w-4 h-0.5 rounded-full" style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }} />
-          <div className="w-4 h-0.5 rounded-full" style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }} />
+        <button
+          onClick={handleIncrease}
+          disabled={height >= MAX_HEIGHT}
+          className="w-8 h-8 rounded-full bg-card/90 backdrop-blur-sm border border-primary/30 flex items-center justify-center hover:bg-card hover:border-primary/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Increase capture height"
+        >
+          <Plus className="w-4 h-4 text-primary" />
+        </button>
+        
+        <div className="w-8 h-8 rounded-full bg-card/90 backdrop-blur-sm border border-primary/20 flex items-center justify-center">
+          <span className="text-xs text-muted-foreground system-text">{height}</span>
         </div>
+        
+        <button
+          onClick={handleDecrease}
+          disabled={height <= MIN_HEIGHT}
+          className="w-8 h-8 rounded-full bg-card/90 backdrop-blur-sm border border-primary/30 flex items-center justify-center hover:bg-card hover:border-primary/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Decrease capture height"
+        >
+          <Minus className="w-4 h-4 text-primary" />
+        </button>
       </div>
+
+      {/* Text preview pill */}
+      {previewText && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-card/90 backdrop-blur-sm border border-primary/20 rounded-full pointer-events-none"
+          style={{
+            top: `calc(50% + ${height / 2}px + 12px)`,
+          }}
+        >
+          <p className="text-xs text-muted-foreground max-w-md truncate">
+            {preview}
+          </p>
+        </div>
+      )}
     </>
   );
 };
