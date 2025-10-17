@@ -48,7 +48,7 @@ export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarPro
     e.stopPropagation();
     if (isDragging) return;
     
-    // Extract EXACT line text at the bar's Y position using per-character rects
+    // Extract paragraph block starting from the bar's Y position
     const article = document.querySelector('article');
     if (!article) return;
 
@@ -82,40 +82,58 @@ export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarPro
 
     if (!targetRect) return;
 
-    const sameLine = (r: DOMRect) => Math.abs(r.top - targetRect!.top) < 1 && Math.abs(r.bottom - targetRect!.bottom) < 1;
-
-    // Second pass: collect text across all nodes that fall within the exact line band
+    // Collect all text starting from the bar position until natural stopping point
     const collectWalker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, null);
     const charRange = document.createRange();
-    let parts: string[] = [];
+    let capturedText = '';
+    let started = false;
+    let lastBottom = targetRect.bottom;
 
     while (collectWalker.nextNode()) {
       const node = collectWalker.currentNode as Text;
       const text = node.nodeValue || '';
       if (!text) continue;
 
-      let start = -1;
       for (let i = 0; i < text.length; i++) {
         charRange.setStart(node, i);
         charRange.setEnd(node, i + 1);
         const r = charRange.getBoundingClientRect();
         if (!r || (r.width === 0 && r.height === 0)) continue;
 
-        if (sameLine(r)) {
-          if (start === -1) start = i;
-        } else if (start !== -1) {
-          parts.push(text.slice(start, i));
-          start = -1;
-          if (r.top > targetRect.bottom + 2) break; // we're below the target line
+        // Start capturing when we reach the bar line
+        if (!started && Math.abs(r.top - targetRect.top) < 1) {
+          started = true;
         }
+
+        if (started) {
+          capturedText += text[i];
+          lastBottom = r.bottom;
+
+          // Stop at natural breaks: paragraph end or after ~300 chars with sentence end
+          const isParagraphBreak = text[i] === '\n' && i + 1 < text.length && text[i + 1] === '\n';
+          const isSentenceEnd = /[.!?]/.test(text[i]) && capturedText.length > 200;
+          
+          if (isParagraphBreak || (isSentenceEnd && capturedText.length > 250)) {
+            onCapture(capturedText.replace(/\s+/g, ' ').trim());
+            return;
+          }
+
+          // Hard limit at 400 chars
+          if (capturedText.length >= 400) {
+            onCapture(capturedText.replace(/\s+/g, ' ').trim());
+            return;
+          }
+        }
+
+        // Stop if we've moved too far down from target
+        if (started && r.top > lastBottom + 50) break;
       }
-      if (start !== -1) parts.push(text.slice(start));
+      if (started && capturedText.length >= 400) break;
     }
 
-    const rawLine = parts.join('');
-    const capturedText = rawLine.replace(/\s+/g, ' ').trim();
-
-    onCapture(capturedText);
+    if (capturedText) {
+      onCapture(capturedText.replace(/\s+/g, ' ').trim());
+    }
   };
 
   return (
