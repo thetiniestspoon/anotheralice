@@ -19,40 +19,29 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Rich narrative context for each chapter
-    const chapterContexts: Record<number, string> = {
-      1: "Inside a black hole: spherical spacecraft, gray fog environment, destroyed ship debris, cosmic horror atmosphere, isolation",
-      2: "Interior greenhouse chamber: withered plants, terracotta pots, failed botanical experiments, dim lighting, sparse vegetation",
-      3: "Cosmic dust storm: massive dust mountains, towering formations, overwhelming scale, intense light from above, valleys of shadow",
-      4: "Hatching chamber: organic egg in amber liquid, cracking shell, emerging life form, ochre colored broth, dim atmosphere",
-      5: "Destroyed garden: buried daffodils, broken pottery, inverted tree with exposed roots, storm damage, chaos and debris",
-      6: "Discovery moment: opalescent pearl, shifting iridescent colors, dim light, precious object, blue green purple hues",
-      7: "Garden tending: gentle hands on plant stems, careful plant care, greenhouse environment, growing vegetation, nurturing touch",
-      8: "Burning structure: building collapsing into flames, twilight dawn sky, ash and embers, destruction and fire",
-      9: "Suspended in void: figure floating in viscous gray substance, weightless, between drowning and floating, liminal space",
-      10: "Standing at edge: two silhouettes on platform edge, gray horizon, dust meeting sky, shared contemplation, vastness",
-      11: "Cosmic eyes: close view of eyes with galaxies inside, starlight reflected in pupils, swirling cosmic patterns, deep space in gaze",
-      12: "Ship awakening: spherical spacecraft with systems activating, control panels lighting up, energy flowing, gentle vibration, glow spreading"
-    };
-
-    const narrativeContext = chapterContexts[chapterNumber] || "A scene from a space exploration story.";
-
-    // Create a rich, tangible prompt - NO TEXT IN IMAGE
+    // Create a rich, tangible prompt based on the captured text - NO TEXT IN IMAGE
     const imagePrompt = `CRITICAL: DO NOT INCLUDE ANY TEXT, LETTERS, WORDS, OR WRITING IN THIS IMAGE.
 
-Create a highly tangible, physical sci-fi illustration: ${narrativeContext}
+Based on this narrative passage, create a highly tangible, physical sci-fi illustration that captures the mood and visuals described:
 
-Visual reference from scene: ${textContext.substring(0, 300)}
+"${textContext}"
+
+Interpret the passage literally - if it describes specific objects, environments, actions, or emotions, visualize those directly. Extract concrete visual elements from the text:
+- Physical objects and environments mentioned
+- Lighting conditions and atmosphere described
+- Characters' positions and actions
+- Emotional tone and mood
+- Spatial relationships and scale
 
 Style requirements:
-- Moody space aesthetic with gray fog and cosmic dust
-- Deep blacks contrasted with glowing cyan/teal/blue accents  
-- Bioluminescent organic elements where appropriate
+- Moody space aesthetic with gray fog and cosmic dust where appropriate
+- Deep blacks contrasted with glowing cyan/teal/blue accents for technology
+- Bioluminescent organic elements for living things
 - Cinematic composition with atmospheric depth
 - Painterly texture and careful lighting
 - NO text, letters, symbols, or written language anywhere in the image
 
-Atmosphere: Contemplative, haunting, beautiful yet unsettling. Focus on tangible physical details - textures, materials, lighting, forms.
+Atmosphere: Match the emotional tone of the passage - whether contemplative, tense, haunting, or beautiful. Focus on tangible physical details - textures, materials, lighting, forms.
 
 Technical: Ultra high resolution, dramatic lighting with specific light sources, layered fog for depth, photorealistic material rendering.`;
 
