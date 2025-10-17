@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { AlicePrompt } from '@/components/AlicePrompt';
 import { GeneratedImage } from '@/hooks/useImageGeneration';
-import { alicePromptPoints, AlicePromptPoint } from '@/utils/alicePromptPoints';
+import { TextCaptureBar } from '@/components/TextCaptureBar';
 
 interface ChapterReaderProps {
   chapter: Chapter;
@@ -32,18 +32,11 @@ export const ChapterReader = ({
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [revealProgress, setRevealProgress] = useState(0.15);
   const [showAlicePrompt, setShowAlicePrompt] = useState(false);
-  const [activePromptPoint, setActivePromptPoint] = useState<AlicePromptPoint | null>(null);
-  const [usedPointIds, setUsedPointIds] = useState<Set<string>>(new Set());
+  const [capturedText, setCapturedText] = useState<string>('');
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollPos = useRef(0);
   const accumulatedScroll = useRef(0);
-
-  // Get all prompt points for this chapter
-  const promptPoints = useMemo(
-    () => alicePromptPoints.filter(p => p.chapterNumber === chapter.number),
-    [chapter.number]
-  );
 
   // Parse content to identify section breaks (standalone symbols)
   const parsedContent = useMemo(() => {
@@ -59,9 +52,8 @@ export const ChapterReader = ({
     setRevealProgress(0.15);
     accumulatedScroll.current = 0;
     lastScrollPos.current = 0;
-    setUsedPointIds(new Set());
     setShowAlicePrompt(false);
-    setActivePromptPoint(null);
+    setCapturedText('');
     setPendingImageUrl(null);
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
@@ -116,9 +108,9 @@ export const ChapterReader = ({
   // Calculate revealed text based on scroll progress
   const revealedCharCount = Math.floor(chapter.content.length * revealProgress);
 
-  // Handle clicking a glowing dot
-  const handleDotClick = (point: AlicePromptPoint) => {
-    setActivePromptPoint(point);
+  // Handle text capture from bar
+  const handleTextCapture = (text: string) => {
+    setCapturedText(text);
     setShowAlicePrompt(true);
   };
 
@@ -129,158 +121,101 @@ export const ChapterReader = ({
 
   const handleAliceDismiss = () => {
     setShowAlicePrompt(false);
-    setActivePromptPoint(null);
+    setCapturedText('');
   };
 
   // Handle clicking the pending image to add to gallery and dismiss
   const handlePendingImageClick = () => {
-    if (pendingImageUrl && activePromptPoint) {
+    if (pendingImageUrl && capturedText) {
       // Add to gallery
       onImageGenerated({
         imageUrl: pendingImageUrl,
         chapterNumber: chapter.number,
         timestamp: new Date().toISOString(),
-        textContext: activePromptPoint.textPassage,
+        textContext: capturedText,
       });
-      
-      // Mark this point as used so dot disappears
-      setUsedPointIds(prev => new Set(prev).add(activePromptPoint.id));
       
       // Clear pending state
       setPendingImageUrl(null);
-      setActivePromptPoint(null);
+      setCapturedText('');
     }
   };
 
-  // Parse content with glowing dots and styled separators
+  // Render content without glowing dots
   const renderContent = () => {
     const elements: JSX.Element[] = [];
-    let textBuffer = '';
-    let currentPos = 0;
+    const revealedText = chapter.content.substring(0, revealedCharCount);
     
-    // Sort prompt points by character position
-    const sortedPoints = [...promptPoints].sort((a, b) => a.characterPosition - b.characterPosition);
-    
-    const flushTextBuffer = (key: string) => {
-      if (textBuffer) {
-        // Split into paragraphs and preserve breaks
-        const paragraphs = textBuffer.split('\n').filter(p => p.trim());
-        paragraphs.forEach((para, idx) => {
-          const trimmed = para.trim();
-          
-          // Check for special separator patterns
-          const isOrbSeparator = /^⸻⸻⚪/.test(trimmed) || /^⚪⸻⚪/.test(trimmed);
-          const isLineSeparator = /^_{10,}$/.test(trimmed);
-          const isSectionBreak = /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(trimmed);
-          
-          if (isOrbSeparator || isLineSeparator) {
-            // Render as styled orb separator
-            elements.push(
-              <div key={`${key}-para-${idx}`} className="flex items-center justify-center my-12">
-                <div className="relative">
-                  {/* Outer glow */}
-                  <div 
-                    className="absolute inset-0 rounded-full blur-xl opacity-30"
-                    style={{
-                      background: `radial-gradient(circle, hsl(190 ${bloomSaturation}% 45%) 0%, transparent 70%)`,
-                      width: '80px',
-                      height: '80px',
-                      transform: 'translate(-50%, -50%)',
-                      top: '50%',
-                      left: '50%',
-                    }}
-                  />
-                  {/* Core orb */}
-                  <div
-                    className="relative w-8 h-8 rounded-full animate-pulse"
-                    style={{
-                      background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 65%), hsl(190 ${bloomSaturation}% 35%))`,
-                      boxShadow: `0 0 30px hsl(190 ${bloomSaturation}% 45% / 0.6), inset 0 0 10px hsl(190 ${bloomSaturation}% 25%)`,
-                    }}
-                  />
-                  {/* Decorative lines if present */}
-                  {isOrbSeparator && (
-                    <>
-                      <div 
-                        className="absolute top-1/2 -left-12 w-10 h-px opacity-40"
-                        style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
-                      />
-                      <div 
-                        className="absolute top-1/2 -right-12 w-10 h-px opacity-40"
-                        style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          } else if (isSectionBreak) {
-            elements.push(
-              <p 
-                key={`${key}-para-${idx}`} 
-                className="text-center text-2xl my-8"
-              >
-                {para}
-              </p>
-            );
-          } else {
-            elements.push(
-              <p 
-                key={`${key}-para-${idx}`} 
-                className="mb-4"
-              >
-                {para}
-              </p>
-            );
-          }
-        });
-        textBuffer = '';
-      }
-    };
-    
-    sortedPoints.forEach((point, index) => {
-      // Add text before this point
-      if (point.characterPosition > currentPos && revealedCharCount > currentPos) {
-        const endPos = Math.min(point.characterPosition, revealedCharCount);
-        textBuffer += chapter.content.substring(currentPos, endPos);
-        currentPos = endPos;
-      }
+    const paragraphs = revealedText.split('\n').filter(p => p.trim());
+    paragraphs.forEach((para, idx) => {
+      const trimmed = para.trim();
       
-      // Check if we should show the dot at this point
-      if (point.characterPosition <= revealedCharCount && !usedPointIds.has(point.id)) {
-        // Flush text before the dot
-        flushTextBuffer(`text-${index}`);
-        
-        // Show glowing dot
+      // Check for special separator patterns
+      const isOrbSeparator = /^⸻⸻⚪/.test(trimmed) || /^⚪⸻⚪/.test(trimmed);
+      const isLineSeparator = /^_{10,}$/.test(trimmed);
+      const isSectionBreak = /^[•⚪⭕○◯◉●◌◍◎◐◑◒◓◔◕◖◗]$/.test(trimmed);
+      
+      if (isOrbSeparator || isLineSeparator) {
+        // Render as styled orb separator
         elements.push(
-          <span 
-            key={`dot-wrapper-${point.id}`}
-            className="inline-block align-middle mx-2"
-          >
-            <button
-              onClick={() => handleDotClick(point)}
-              className="relative w-4 h-4 rounded-full bg-primary/80 hover:bg-primary hover:scale-150 transition-all duration-300 cursor-pointer group"
-              style={{
-                boxShadow: `0 0 20px hsl(190 ${bloomSaturation}% 45% / 0.8)`,
-                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              }}
-              aria-label={`Visualize: ${point.description}`}
-              title="Click to visualize this moment"
-            >
-              <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
-            </button>
-          </span>
+          <div key={`para-${idx}`} className="flex items-center justify-center my-12">
+            <div className="relative">
+              {/* Outer glow */}
+              <div 
+                className="absolute inset-0 rounded-full blur-xl opacity-30"
+                style={{
+                  background: `radial-gradient(circle, hsl(190 ${bloomSaturation}% 45%) 0%, transparent 70%)`,
+                  width: '80px',
+                  height: '80px',
+                  transform: 'translate(-50%, -50%)',
+                  top: '50%',
+                  left: '50%',
+                }}
+              />
+              {/* Core orb */}
+              <div
+                className="relative w-8 h-8 rounded-full animate-pulse"
+                style={{
+                  background: `radial-gradient(circle at 30% 30%, hsl(190 ${bloomSaturation}% 65%), hsl(190 ${bloomSaturation}% 35%))`,
+                  boxShadow: `0 0 30px hsl(190 ${bloomSaturation}% 45% / 0.6), inset 0 0 10px hsl(190 ${bloomSaturation}% 25%)`,
+                }}
+              />
+              {/* Decorative lines if present */}
+              {isOrbSeparator && (
+                <>
+                  <div 
+                    className="absolute top-1/2 -left-12 w-10 h-px opacity-40"
+                    style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
+                  />
+                  <div 
+                    className="absolute top-1/2 -right-12 w-10 h-px opacity-40"
+                    style={{ background: `hsl(190 ${bloomSaturation}% 45%)` }}
+                  />
+                </>
+              )}
+            </div>
+          </div>
         );
-        
-        currentPos = point.characterPosition;
+      } else if (isSectionBreak) {
+        elements.push(
+          <p 
+            key={`para-${idx}`} 
+            className="text-center text-2xl my-8"
+          >
+            {para}
+          </p>
+        );
+      } else {
+        elements.push(
+          <p 
+            key={`para-${idx}`} 
+            className="mb-4"
+          >
+            {para}
+          </p>
+        );
       }
     });
-    
-    // Add remaining text
-    if (currentPos < revealedCharCount) {
-      textBuffer += chapter.content.substring(currentPos, revealedCharCount);
-    }
-    flushTextBuffer('text-final');
     
     return elements;
   };
@@ -415,10 +350,16 @@ export const ChapterReader = ({
         </article>
       </div>
 
+      {/* Text capture bar */}
+      <TextCaptureBar 
+        onCapture={handleTextCapture}
+        bloomSaturation={bloomSaturation}
+      />
+
       {/* ALICE prompt overlay */}
-      {showAlicePrompt && activePromptPoint && (
+      {showAlicePrompt && capturedText && (
         <AlicePrompt
-          textContext={activePromptPoint.textPassage}
+          textContext={capturedText}
           chapterNumber={chapter.number}
           onAccept={handleAliceAccept}
           onDismiss={handleAliceDismiss}
