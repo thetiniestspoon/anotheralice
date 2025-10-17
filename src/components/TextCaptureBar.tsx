@@ -48,15 +48,13 @@ export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarPro
     e.stopPropagation();
     if (isDragging) return;
     
-    // Extract text at current bar position
+    // Extract text at current bar position (aligned with the bar)
     const article = document.querySelector('article');
     if (!article) return;
 
-    const articleRect = article.getBoundingClientRect();
     const barAbsoluteY = (window.innerHeight * barY) / 100;
-    const relativeY = barAbsoluteY - articleRect.top + window.scrollY;
 
-    // Find text nodes at this Y position
+    // Find text nodes that intersect with the bar's Y position
     const walker = document.createTreeWalker(
       article,
       NodeFilter.SHOW_TEXT,
@@ -65,7 +63,7 @@ export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarPro
 
     let textBefore = '';
     let textAfter = '';
-    let foundPosition = false;
+    let foundBar = false;
 
     while (walker.nextNode()) {
       const node = walker.currentNode;
@@ -73,21 +71,23 @@ export const TextCaptureBar = ({ onCapture, bloomSaturation }: TextCaptureBarPro
       if (!parent) continue;
 
       const rect = parent.getBoundingClientRect();
-      const nodeY = rect.top;
-
-      if (!foundPosition && nodeY > barAbsoluteY) {
-        foundPosition = true;
-      }
-
       const text = node.textContent || '';
-      if (!foundPosition) {
+      
+      // Check if this text element intersects with the bar
+      if (!foundBar && rect.top <= barAbsoluteY && rect.bottom >= barAbsoluteY) {
+        foundBar = true;
+        // This is the text at the bar position, capture it and continue for after text
+        textAfter += text;
+      } else if (!foundBar) {
+        // Text before the bar
         textBefore += text;
       } else if (textAfter.length < 300) {
+        // Text after the bar
         textAfter += text;
       }
     }
 
-    // Get surrounding context (150 chars before and after)
+    // Get surrounding context (150 chars before and after the bar position)
     const contextBefore = textBefore.slice(-150).trim();
     const contextAfter = textAfter.slice(0, 150).trim();
     const capturedText = `${contextBefore} ${contextAfter}`.trim();
