@@ -115,8 +115,11 @@ export const ChapterReader = ({
   };
 
   const handleAliceAccept = (imageUrl: string) => {
-    setPendingImageUrl(imageUrl);
     setShowAlicePrompt(false);
+    // Delay showing pending image until AlicePrompt is fully dismissed
+    setTimeout(() => {
+      setPendingImageUrl(imageUrl);
+    }, 100);
   };
 
   const handleAliceDismiss = () => {
