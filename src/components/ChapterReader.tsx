@@ -383,7 +383,6 @@ export const ChapterReader = ({
 
         {/* Main reading area with overlay components */}
         <div className="relative flex-1">
-          {/* Scrollable content */}
           <div
             ref={containerRef}
             className="h-full overflow-y-auto overscroll-contain"
@@ -392,6 +391,14 @@ export const ChapterReader = ({
               WebkitOverflowScrolling: 'touch',
             }}
           >
+            {/* Text capture bar overlay INSIDE scroll container to ensure touch scrolling works */}
+            <TextCaptureBar
+              position={captureBarPosition}
+              onPositionChange={setCaptureBarPosition}
+              bloomSaturation={bloomSaturation}
+              height={CAPTURE_BAR_HEIGHT}
+            />
+
             <article ref={readingContentRef} className="max-w-3xl mx-auto px-8 py-16 space-y-8">
               {/* Chapter symbol */}
               {chapter.symbol && (
@@ -432,13 +439,6 @@ export const ChapterReader = ({
             </article>
           </div>
 
-          {/* Text capture bar overlay */}
-          <TextCaptureBar
-            position={captureBarPosition}
-            onPositionChange={setCaptureBarPosition}
-            bloomSaturation={bloomSaturation}
-            height={CAPTURE_BAR_HEIGHT}
-          />
 
           {/* ALICE button */}
           <AliceButton
