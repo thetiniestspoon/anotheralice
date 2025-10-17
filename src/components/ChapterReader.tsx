@@ -361,6 +361,10 @@ export const ChapterReader = ({
           <div
             ref={containerRef}
             className="h-full overflow-y-auto overscroll-contain"
+            style={{
+              touchAction: 'pan-y',
+              WebkitOverflowScrolling: 'touch',
+            }}
           >
             <article ref={readingContentRef} className="max-w-3xl mx-auto px-8 py-16 space-y-8">
               {/* Chapter symbol */}
