@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Another ALICE — by Shawn Jordan</title>
+  <meta name="description" content="Another ALICE — an illustrated digital novel about consciousness, creation, and the boundary between author and audience.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Title Screen -->
+  <div id="title-screen" class="screen active">
+    <div class="star-ring"></div>
+    <div class="title-content">
+      <h1 class="title-main">Another<br><span class="title-alice">ALICE</span></h1>
+      <p class="title-author">by Shawn Jordan</p>
+      <div class="title-divider"></div>
+      <p class="title-tagline">An illustrated digital novel</p>
+      <button id="begin-btn" class="begin-button">Begin Reading</button>
+    </div>
+    <div class="dust-particles"></div>
+  </div>
+
+  <!-- Table of Contents -->
+  <nav id="toc-screen" class="screen">
+    <div class="toc-container">
+      <h2 class="toc-heading">Table of Contents</h2>
+      <ol id="toc-list" class="toc-list"></ol>
+      <div class="toc-epilogue" id="toc-epilogue-link">Epilogue</div>
+    </div>
+  </nav>
+
+  <!-- Reader -->
+  <main id="reader-screen" class="screen">
+    <header id="reader-header" class="reader-header">
+      <button id="toc-btn" class="header-btn" aria-label="Table of Contents">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <line x1="3" y1="5" x2="17" y2="5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="3" y1="15" x2="17" y2="15" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </button>
+      <span id="chapter-indicator" class="chapter-indicator"></span>
+      <button id="progress-btn" class="header-btn" aria-label="Reading progress">
+        <svg id="progress-ring" width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="#333" stroke-width="2"/>
+          <circle id="progress-circle" cx="12" cy="12" r="10" fill="none" stroke="#8a8a7a" stroke-width="2"
+            stroke-dasharray="62.83" stroke-dashoffset="62.83" transform="rotate(-90 12 12)"/>
+        </svg>
+      </button>
+    </header>
+
+    <article id="chapter-content" class="chapter-content"></article>
+
+    <footer class="reader-footer">
+      <button id="prev-btn" class="nav-btn" disabled>← Previous</button>
+      <button id="next-btn" class="nav-btn">Next →</button>
+    </footer>
+  </main>
+
+  <script src="reader.js"></script>
+</body>
+</html>
